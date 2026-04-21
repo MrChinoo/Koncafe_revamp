@@ -1,5 +1,5 @@
 // Attract / Welcome screen
-function ScreenAttract({ t, lang, setLang, onStart }) {
+function ScreenAttract({ t, lang, setLang, onStart, onBarista }) {
   return (
     <div data-screen-label="01 Attract" style={{
       position: 'absolute', inset: 0, overflow: 'hidden',
@@ -130,8 +130,21 @@ function ScreenAttract({ t, lang, setLang, onStart }) {
         <div className="t-xs" style={{ color: 'var(--taupe)' }}>
           {lang === 'es' ? 'Pantalla accesible · sin gluten disponible' : 'Accessible screen · gluten-free available'}
         </div>
-        <div className="t-xs mono" style={{ color: 'var(--taupe)', letterSpacing: '0.14em' }}>
-          EST. 2024 · CDMX
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="t-xs mono" style={{ color: 'var(--taupe)', letterSpacing: '0.14em' }}>
+            EST. 2024 · CDMX
+          </div>
+          {/* Acceso discreto al panel de barista */}
+          {onBarista && (
+            <button onClick={onBarista} style={{
+              padding: '7px 14px', borderRadius: 999,
+              background: 'var(--cream)', border: '1px solid var(--line)',
+              color: 'var(--taupe)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+            }}>
+              {lang === 'es' ? '☕ Barista' : '☕ Barista'}
+            </button>
+          )}
         </div>
       </div>
     </div>

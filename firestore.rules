@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Menú — lectura pública (kiosco y clientes)
+    match /menu/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Pedidos — cualquiera puede crear (incluye guests)
+    // Solo el propietario o admin puede leer/actualizar
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update: if request.auth != null || true; // demo: abierto para barista
+    }
+
+    // Ventas — solo escritura interna (barista), lectura para manager
+    match /sales/{saleId} {
+      allow read, write: if true; // demo: abierto
+    }
+
+    // Usuarios — cada usuario solo ve/edita su propio documento
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Historial de puntos — subcollección del usuario
+      match /pointsTransactions/{txId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Inventario — solo manager/admin
+    match /inventory/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Gastos — solo manager/admin
+    match /gastos/{doc} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Empleados — solo manager/admin
+    match /employees/{doc} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

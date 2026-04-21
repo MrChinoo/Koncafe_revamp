@@ -26,7 +26,7 @@ function KioskFrame({ children, width = 1440, height = 960 }) {
 }
 
 // Top bar — brand + language + points badge (when logged in)
-function TopBar({ t, lang, setLang, user, cart, onCart, onHome, step }) {
+function TopBar({ t, lang, setLang, user, cart, onCart, onHome, onProfile, onBarista, step }) {
   const show = step !== 'attract';
   if (!show) return null;
   return (
@@ -50,10 +50,11 @@ function TopBar({ t, lang, setLang, user, cart, onCart, onHome, step }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {user && (
-          <div style={{
+          <button onClick={onProfile} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '8px 14px 8px 10px',
             background: 'var(--cream)', borderRadius: 999,
+            border: 'none', cursor: 'pointer',
           }}>
             <div style={{
               width: 28, height: 28, borderRadius: 999, background: 'var(--terracotta)',
@@ -63,9 +64,9 @@ function TopBar({ t, lang, setLang, user, cart, onCart, onHome, step }) {
             <div style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</div>
             <div style={{ width: 1, height: 16, background: 'var(--line)' }} />
             <div className="mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--terracotta)' }}>
-              {user.points.toLocaleString()} <span style={{ color: 'var(--taupe)', fontWeight: 500 }}>pts</span>
+              {(user.points || 0).toLocaleString()} <span style={{ color: 'var(--taupe)', fontWeight: 500 }}>pts</span>
             </div>
-          </div>
+          </button>
         )}
         <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} style={{
           display: 'flex', alignItems: 'center', gap: 8,
@@ -76,6 +77,15 @@ function TopBar({ t, lang, setLang, user, cart, onCart, onHome, step }) {
           {Icon.globe}
           <span>{lang === 'es' ? 'ES' : 'EN'}</span>
           <span style={{ color: 'var(--taupe)', fontWeight: 500 }}>/ {lang === 'es' ? 'EN' : 'ES'}</span>
+        </button>
+        <button onClick={onBarista} style={{
+          padding: '8px 14px', borderRadius: 999,
+          background: 'var(--charcoal)', color: 'var(--ivory)',
+          fontSize: 12, fontWeight: 600, border: 'none',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span style={{ fontSize: 14 }}>☕</span>
+          <span>Barista</span>
         </button>
         {cart.length > 0 && step !== 'cart' && step !== 'payment' && step !== 'confirm' && (
           <button onClick={onCart} style={{

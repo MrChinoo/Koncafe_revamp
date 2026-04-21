@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "site": "koncafe-revamp",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "CLAUDE.md",
+      "firestore.rules",
+      ".git/**",
+      "node_modules/**",
+      "Koncaffe Kiosk.html"
+    ],
+    "headers": [
+      {
+        "source": "**/*.jsx",
+        "headers": [
+          { "key": "Content-Type", "value": "application/javascript" }
+        ]
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

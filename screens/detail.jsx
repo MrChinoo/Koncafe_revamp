@@ -1,7 +1,8 @@
 // Product detail / customization screen — two variant styles via `variant` prop
 function ScreenDetail({ t, lang, product, onBack, onAdd, variant = 'panel' }) {
   if (!product) return null;
-  const schema = CUSTOM[product.cat] || {};
+  // Usa customización dinámica de Firestore si existe, fallback a schema por categoría
+  const schema = (CUSTOM_FS && CUSTOM_FS[product.id]) || CUSTOM[product.cat] || {};
   const initial = {};
   Object.entries(schema).forEach(([k, v]) => {
     if (v.stepper) { initial[k] = v.def; }

@@ -1,8 +1,12 @@
 // Menu browse screen — supports 3 layout variants via props.layout: 'cards' | 'list' | 'editorial'
 function ScreenMenu({ t, lang, cart, onAdd, onOpen, layout = 'cards' }) {
-  const [cat, setCat] = React.useState('espresso');
-  const cats = ['espresso','filter','matcha','cold','smoothie','toast','pastry','cake'];
-  const items = MENU.filter(m => m.cat === cat);
+  // Solo mostrar categorías que tienen productos
+  const ALL_CATS = ['espresso','filter','matcha','cold','smoothie','toast','pastry','cake'];
+  const cats = ALL_CATS.filter(c => MENU.some(m => m.cat === c));
+  const [cat, setCat] = React.useState(() => cats[0] || 'espresso');
+  // Si al recargar el menú la categoría actual queda vacía, ir a la primera disponible
+  const activeCat = cats.includes(cat) ? cat : (cats[0] || 'espresso');
+  const items = MENU.filter(m => m.cat === activeCat);
 
   const curated = MENU.filter(m => m.tag === 'popular').slice(0, 4);
 
@@ -18,7 +22,7 @@ function ScreenMenu({ t, lang, cart, onAdd, onOpen, layout = 'cards' }) {
           {lang === 'es' ? 'CATEGORÍAS' : 'CATEGORIES'}
         </div>
         {cats.map(c => {
-          const active = c === cat;
+          const active = c === activeCat;
           return (
             <button key={c} onClick={() => setCat(c)} style={{
               padding: '12px 14px', borderRadius: 'var(--r-md)',
@@ -31,7 +35,7 @@ function ScreenMenu({ t, lang, cart, onAdd, onOpen, layout = 'cards' }) {
               <span>{t.categories[c]}</span>
               <span className="mono" style={{
                 fontSize: 11, opacity: active ? 0.7 : 0.4,
-              }}>{String(MENU.filter(m=>m.cat===c).length).padStart(2,'0')}</span>
+              }}>{String(MENU.filter(m => m.cat === c).length).padStart(2,'0')}</span>
             </button>
           );
         })}
@@ -54,17 +58,10 @@ function ScreenMenu({ t, lang, cart, onAdd, onOpen, layout = 'cards' }) {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <div className="t-micro" style={{ color: 'var(--taupe)' }}>
-              {t.categories[cat]} · {items.length} {lang === 'es' ? 'opciones' : 'options'}
+              {t.categories[activeCat]} · {items.length} {lang === 'es' ? 'opciones' : 'options'}
             </div>
             <h1 className="t-h1" style={{ margin: '6px 0 0', color: 'var(--charcoal)' }}>
-              {cat === 'espresso' && (lang === 'es' ? 'Espresso' : 'Espresso')}
-              {cat === 'filter' && (lang === 'es' ? 'Café filtrado' : 'Filter coffee')}
-              {cat === 'matcha' && (lang === 'es' ? 'Matcha & Té' : 'Matcha & Tea')}
-              {cat === 'cold' && (lang === 'es' ? 'Especiales fríos' : 'Cold specials')}
-              {cat === 'smoothie' && 'Smoothies'}
-              {cat === 'toast' && (lang === 'es' ? 'Tostadas' : 'Toast')}
-              {cat === 'pastry' && (lang === 'es' ? 'Pastelería' : 'Pastry')}
-              {cat === 'cake' && (lang === 'es' ? 'Postres' : 'Desserts')}
+              {t.categories[activeCat]}
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -76,9 +73,14 @@ function ScreenMenu({ t, lang, cart, onAdd, onOpen, layout = 'cards' }) {
         </div>
 
         {/* LAYOUT VARIANTS */}
-        {layout === 'cards' && <GridCards items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
-        {layout === 'list' && <ListRows items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
-        {layout === 'editorial' && <Editorial items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
+        {items.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--taupe)' }}>
+            {lang === 'es' ? 'Cargando productos…' : 'Loading products…'}
+          </div>
+        )}
+        {layout === 'cards' && items.length > 0 && <GridCards items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
+        {layout === 'list' && items.length > 0 && <ListRows items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
+        {layout === 'editorial' && items.length > 0 && <Editorial items={items} lang={lang} t={t} onOpen={onOpen} onAdd={onAdd} />}
 
         {/* upsell rail */}
         <div style={{ marginTop: 48 }}>

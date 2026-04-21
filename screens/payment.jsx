@@ -1,4 +1,4 @@
-// Payment screen — method selection + per-method interactions + invoice
+// Payment screen — method selection + per-method interactions + invoice + Firestore order creation
 function ScreenPayment({ t, lang, cart, user, promo, redeem, onBack, onDone }) {
   const subtotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
   const promoDiscount = promo ? Math.round(subtotal * 0.15) : 0;
@@ -9,8 +9,58 @@ function ScreenPayment({ t, lang, cart, user, promo, redeem, onBack, onDone }) {
   const [invoice, setInvoice] = React.useState({ rfc: '', email: '', business: '' });
   const [cashGiven, setCashGiven] = React.useState(0);
   const [phase, setPhase] = React.useState('choose'); // choose | cardWait | cardOk | cashWait | cashOk
+  const [creating, setCreating] = React.useState(false);
 
-  const completeOrder = () => onDone({ method, total, invoice: wantsInvoice ? invoice : null });
+  async function completeOrder() {
+    if (creating) return;
+    setCreating(true);
+    let orderId = null;
+
+    try {
+      const orderItems = cart.map(item => ({
+        productId: item.id,
+        productName: item.name_es || item.name_en || 'Producto',
+        selectedSize: item.customization?.size?.label || item.customization?.size || '',
+        extras: [
+          ...((item.customization?.extras || []).map(e => e.label || e)),
+          ...(item.customization?.milk?.label ? [item.customization.milk.label] : []),
+        ].filter(Boolean),
+        quantity: item.qty || 1,
+        price: item.unitPrice || 0,
+      }));
+
+      const orderDoc = {
+        clientId: user?.uid || `guest-${Date.now()}`,
+        clientName: user?.name || 'Invitado',
+        items: orderItems,
+        status: method === 'cash' ? 'pending_cash' : 'pending',
+        paymentMethod: method === 'cash' ? 'cash' : 'card',
+        paymentStatus: method === 'card' ? 'approved' : 'pending',
+        total: total,
+        branchId: 'branch-001',
+        estimatedMins: 6,
+        preparationStep: 0,
+        orderType: cart.some(i => i.service === 'to_go') ? 'llevar' : 'aqui',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      const docRef = await db.collection('orders').add(orderDoc);
+      orderId = docRef.id;
+
+      // Asignar puntos inmediatamente solo para pago con tarjeta (efectivo se asigna cuando barista marca listo)
+      if (method === 'card' && user?.uid && !user.uid.startsWith('guest') && !user.uid.startsWith('phone-')) {
+        await awardPointsInFirestore(user.uid, orderId, total);
+      }
+
+    } catch (err) {
+      console.error('Error creating order in Firestore:', err);
+      // Continuar igualmente — el kiosco no debe bloquearse
+    } finally {
+      setCreating(false);
+    }
+
+    onDone({ method, total, invoice: wantsInvoice ? invoice : null, orderId });
+  }
 
   return (
     <div data-screen-label="06 Payment" style={{ height: '100%', display: 'flex', background: 'var(--ivory)' }}>
@@ -29,7 +79,7 @@ function ScreenPayment({ t, lang, cart, user, promo, redeem, onBack, onDone }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[
             { k: 'card', icon: Icon.card, name: t.card, sub: lang === 'es' ? 'Inserta, desliza o contactless' : 'Insert, swipe or contactless' },
-            { k: 'cash', icon: Icon.cash, name: t.cash, sub: lang === 'es' ? 'Billetes y monedas' : 'Bills and coins' },
+            { k: 'cash', icon: Icon.cash, name: t.cash, sub: lang === 'es' ? 'Pago aprobado por barista' : 'Approved by barista' },
           ].map(m => (
             <button key={m.k} onClick={() => { setMethod(m.k); setPhase(m.k + 'Wait'); }} style={{
               padding: 28, borderRadius: 'var(--r-lg)',
@@ -88,7 +138,7 @@ function ScreenPayment({ t, lang, cart, user, promo, redeem, onBack, onDone }) {
             <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <LabeledInput label={t.rfc} value={invoice.rfc} onChange={v => setInvoice({ ...invoice, rfc: v.toUpperCase() })} placeholder="XAXX010101000" mono />
               <LabeledInput label={t.business} value={invoice.business} onChange={v => setInvoice({ ...invoice, business: v })} placeholder="Razón social" />
-              <LabeledInput label={t.email} value={invoice.email} onChange={v => setInvoice({ ...invoice, email: v })} placeholder="ana@email.com" style={{ gridColumn: '1 / -1' }} />
+              <LabeledInput label={t.email} value={invoice.email} onChange={v => setInvoice({ ...invoice, email: v })} placeholder="cliente@email.com" style={{ gridColumn: '1 / -1' }} />
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <div className="t-xs" style={{ color: 'var(--taupe)', alignSelf: 'center', marginRight: 4 }}>
                   {lang === 'es' ? 'Uso:' : 'Use:'}
@@ -103,18 +153,36 @@ function ScreenPayment({ t, lang, cart, user, promo, redeem, onBack, onDone }) {
 
         {/* live payment phase */}
         <div style={{ marginTop: 20, minHeight: 160 }}>
-          {phase === 'cardWait' && <CardTerminal lang={lang} total={total} onDone={() => { setPhase('cardOk'); setTimeout(completeOrder, 900); }} />}
-          {phase === 'cashWait' && <CashPad lang={lang} total={total} given={cashGiven} setGiven={setCashGiven} onDone={() => { setPhase('cashOk'); setTimeout(completeOrder, 800); }} />}
+          {phase === 'cardWait' && (
+            <CardTerminal lang={lang} total={total} onDone={() => {
+              setPhase('cardOk');
+              setTimeout(completeOrder, 900);
+            }} />
+          )}
+          {phase === 'cashWait' && (
+            <CashPad lang={lang} total={total} given={cashGiven} setGiven={setCashGiven} onDone={() => {
+              setPhase('cashOk');
+              setTimeout(completeOrder, 800);
+            }} />
+          )}
           {(phase === 'cardOk' || phase === 'cashOk') && (
             <div style={{
               padding: 24, background: 'var(--success)', color: '#fff',
               borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', gap: 16,
               animation: 'softFade 400ms',
             }}>
-              <div style={{ width: 36, height: 36, borderRadius: 999, background: '#fff', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>
+              <div style={{ width: 36, height: 36, borderRadius: 999, background: '#fff', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {creating ? '…' : '✓'}
+              </div>
               <div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{lang === 'es' ? 'Pago confirmado' : 'Payment confirmed'}</div>
-                <div className="t-sm" style={{ opacity: 0.85 }}>{lang === 'es' ? 'Preparando tu pedido…' : 'Preparing your order…'}</div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  {creating
+                    ? (lang === 'es' ? 'Registrando pedido…' : 'Registering order…')
+                    : (lang === 'es' ? 'Pago confirmado' : 'Payment confirmed')}
+                </div>
+                <div className="t-sm" style={{ opacity: 0.85 }}>
+                  {lang === 'es' ? 'Preparando tu pedido…' : 'Preparing your order…'}
+                </div>
               </div>
             </div>
           )}

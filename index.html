@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Koncaffe · Kiosco</title>
+<link rel="stylesheet" href="styles/tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(ellipse at top, #2a2620 0%, #120f0b 70%);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  #stage { transform-origin: center center; }
+  .tweaks-panel {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 320px; padding: 18px; background: var(--ivory);
+    border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+    z-index: 1000; color: var(--charcoal);
+    font-family: var(--font-sans);
+    display: none;
+  }
+  .tweaks-panel.open { display: block; }
+  .tweak-row { margin-bottom: 14px; }
+  .tweak-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--taupe); font-weight: 600; margin-bottom: 6px; }
+  .tweak-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tweak-opts button {
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: transparent; font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .tweak-opts button.active { background: var(--charcoal); color: var(--ivory); border-color: var(--charcoal); }
+</style>
+
+<!-- Firebase compat SDK v9 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="stage"><div id="root"></div></div>
+<div id="tweaks" class="tweaks-panel" aria-hidden="true"></div>
+
+<script type="text/babel" src="components/atoms.jsx"></script>
+<script type="text/babel" src="components/data.jsx"></script>
+<script type="text/babel" src="components/frame.jsx"></script>
+<script type="text/babel" src="screens/attract.jsx"></script>
+<script type="text/babel" src="screens/menu.jsx"></script>
+<script type="text/babel" src="screens/detail.jsx"></script>
+<script type="text/babel" src="screens/cart.jsx"></script>
+<script type="text/babel" src="screens/loyalty.jsx"></script>
+<script type="text/babel" src="screens/payment.jsx"></script>
+<script type="text/babel" src="screens/confirm.jsx"></script>
+<script type="text/babel" src="screens/barista.jsx"></script>
+<script type="text/babel" src="screens/profile.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = {
+  "menuLayout": "editorial",
+  "detailVariant": "panel",
+  "loyaltyReveal": "burst"
+};
+
+function App() {
+  const [lang, setLang]       = React.useState(() => localStorage.getItem('konc_lang') || 'es');
+  const [step, setStep]       = React.useState(() => localStorage.getItem('konc_step') || 'attract');
+  const [cart, setCart]       = React.useState(() => { try { return JSON.parse(localStorage.getItem('konc_cart') || '[]'); } catch { return []; }});
+  const [product, setProduct] = React.useState(null);
+  const [user, setUser]       = React.useState(() => { try { return JSON.parse(localStorage.getItem('konc_user') || 'null'); } catch { return null; }});
+  const [promo, setPromo]     = React.useState('');
+  const [redeem, setRedeem]   = React.useState(0);
+  const [orderNumber, setOrderNumber] = React.useState(247);
+  const [lastTotal, setLastTotal]     = React.useState(0);
+  const [lastMethod, setLastMethod]   = React.useState('card');
+  const [lastInvoice, setLastInvoice] = React.useState(null);
+  const [lastOrderId, setLastOrderId] = React.useState(null);
+  const [tweaks, setTweaks]   = React.useState(TWEAK_DEFAULTS);
+  const [menuVer, setMenuVer] = React.useState(0); // bump to re-render after Firestore load
+
+  const t = T[lang];
+
+  // ── Cargar menú real de Firestore al montar ──────────────────────────────
+  React.useEffect(() => {
+    loadMenuFromFirestore()
+      .then(loaded => {
+        if (loaded && loaded.length > 0) {
+          setMenuVer(v => v + 1); // fuerza re-render para que ScreenMenu use MENU actualizado
+        }
+      })
+      .catch(err => console.warn('Firestore menu load failed, using fallback:', err));
+  }, []);
+
+  // ── Sincronizar auth de Firebase ────────────────────────────────────────
+  React.useEffect(() => {
+    const unsub = auth.onAuthStateChanged(async (fbUser) => {
+      if (fbUser) {
+        try {
+          const userData = await getOrCreateUser(fbUser);
+          setUser({
+            uid: fbUser.uid,
+            name: fbUser.displayName || userData.name,
+            initial: (fbUser.displayName || userData.name || 'U')[0].toUpperCase(),
+            points: userData.points || 0,
+            tier: userData.tier || 'verde',
+            email: fbUser.email,
+          });
+        } catch (e) { /* Firestore no disponible - no bloquear */ }
+      }
+    });
+    return unsub;
+  }, []);
+
+  React.useEffect(() => { localStorage.setItem('konc_lang', lang); }, [lang]);
+  React.useEffect(() => { if (step !== 'barista') localStorage.setItem('konc_step', step); }, [step]);
+  React.useEffect(() => { localStorage.setItem('konc_cart', JSON.stringify(cart)); }, [cart]);
+  React.useEffect(() => { localStorage.setItem('konc_user', JSON.stringify(user)); }, [user]);
+
+  // ── Escalar stage al viewport ────────────────────────────────────────────
+  React.useEffect(() => {
+    const stage = document.getElementById('stage');
+    const fit = () => {
+      const s = Math.min(window.innerWidth / 1560, window.innerHeight / 1080, 1);
+      stage.style.transform = `scale(${s})`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  // ── Tweaks UI ────────────────────────────────────────────────────────────
+  React.useEffect(() => {
+    const panel = document.getElementById('tweaks');
+    const opts = (key, values) => values.map(v =>
+      `<button class="${tweaks[key] === v ? 'active' : ''}" data-k="${key}" data-v="${v}">${v}</button>`
+    ).join('');
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:15px;font-weight:700;">Tweaks</div>
+        <div style="font-size:11px;color:var(--taupe);letter-spacing:0.1em;">KONCAFFE HiFi</div>
+      </div>
+      <div class="tweak-row"><div class="tweak-label">Menu layout</div>
+        <div class="tweak-opts">${opts('menuLayout', ['cards', 'list', 'editorial'])}</div></div>
+      <div class="tweak-row"><div class="tweak-label">Customization style</div>
+        <div class="tweak-opts">${opts('detailVariant', ['panel', 'stacked'])}</div></div>
+      <div class="tweak-row"><div class="tweak-label">Loyalty reveal</div>
+        <div class="tweak-opts">${opts('loyaltyReveal', ['card', 'scanner', 'burst'])}</div></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button style="flex:1;padding:10px;border-radius:10px;background:var(--cream);border:none;font-size:12px;font-weight:600;cursor:pointer;" id="tw-reset">Reset flow</button>
+        <button style="flex:1;padding:10px;border-radius:10px;background:#2a2620;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;" id="tw-barista">Barista →</button>
+      </div>
+    `;
+    panel.querySelectorAll('[data-k]').forEach(b => {
+      b.onclick = () => setTweaks(prev => ({ ...prev, [b.dataset.k]: b.dataset.v }));
+    });
+    document.getElementById('tw-reset').onclick = () => {
+      setStep('attract'); setCart([]); setUser(null); setPromo(''); setRedeem(0);
+      auth.signOut().catch(() => {});
+    };
+    document.getElementById('tw-barista').onclick = () => setStep('barista');
+
+    const onMsg = (e) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === '__activate_edit_mode')   panel.classList.add('open');
+      if (e.data.type === '__deactivate_edit_mode') panel.classList.remove('open');
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [tweaks]);
+
+  const goto       = (s) => setStep(s);
+  const addToCart  = (item) => setCart(prev => [...prev, item]);
+  const openProduct = (p) => { setProduct(p); goto('detail'); };
+
+  return (
+    <KioskFrame width={1440} height={960}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <TopBar t={t} lang={lang} setLang={setLang} user={user} cart={cart}
+          onCart={() => goto('cart')} onHome={() => goto('menu')}
+          onProfile={() => goto('profile')} onBarista={() => goto('barista')} step={step} />
+        <FlowSteps step={step} lang={lang} />
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          {step === 'attract' && (
+            <ScreenAttract t={t} lang={lang} setLang={setLang}
+              onStart={() => goto('menu')}
+              onBarista={() => goto('barista')} />
+          )}
+          {step === 'menu' && (
+            <ScreenMenu key={menuVer}
+              t={t} lang={lang} cart={cart}
+              onAdd={addToCart} onOpen={openProduct}
+              layout={tweaks.menuLayout} />
+          )}
+          {step === 'detail' && (
+            <ScreenDetail t={t} lang={lang} product={product}
+              onBack={() => goto('menu')} onAdd={addToCart}
+              variant={tweaks.detailVariant} />
+          )}
+          {step === 'cart' && (
+            <ScreenCart t={t} lang={lang} cart={cart} setCart={setCart} user={user}
+              onBack={() => goto('menu')}
+              onNext={() => goto(user ? 'payment' : 'loyalty')}
+              promo={promo} setPromo={setPromo}
+              redeem={redeem} setRedeem={setRedeem} />
+          )}
+          {step === 'loyalty' && (
+            <ScreenLoyalty t={t} lang={lang}
+              onSignIn={(u) => { setUser(u); goto('payment'); }}
+              onSkip={() => goto('payment')}
+              user={user} reveal={tweaks.loyaltyReveal} />
+          )}
+          {step === 'payment' && (
+            <ScreenPayment t={t} lang={lang} cart={cart} user={user}
+              promo={promo} redeem={redeem}
+              onBack={() => goto('cart')}
+              onDone={(r) => {
+                setLastTotal(r.total);
+                setLastMethod(r.method);
+                setLastInvoice(r.invoice);
+                setLastOrderId(r.orderId);
+                setOrderNumber(n => n + 1);
+                if (user) setUser(prev => prev ? {
+                  ...prev,
+                  points: (prev.points || 0) - (redeem || 0) + Math.round(r.total / 10)
+                } : prev);
+                goto('confirm');
+              }} />
+          )}
+          {step === 'confirm' && (
+            <ScreenConfirm t={t} lang={lang}
+              orderNumber={orderNumber} cart={cart}
+              total={lastTotal} method={lastMethod}
+              invoice={lastInvoice} orderId={lastOrderId}
+              earned={user ? Math.round(lastTotal / 10) : 0}
+              onReset={() => { setCart([]); setPromo(''); setRedeem(0); goto('attract'); }} />
+          )}
+          {step === 'barista' && (
+            <ScreenBarista t={t} lang={lang} onExit={() => goto('attract')} />
+          )}
+          {step === 'profile' && (
+            <ScreenProfile t={t} lang={lang} user={user}
+              onBack={() => goto(cart.length > 0 ? 'cart' : 'menu')}
+              onSignOut={() => { setUser(null); goto('attract'); }} />
+          )}
+        </div>
+      </div>
+    </KioskFrame>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

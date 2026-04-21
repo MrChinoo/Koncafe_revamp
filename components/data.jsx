@@ -5,12 +5,12 @@ const T = {
     tap_to_start: 'Toca para comenzar',
     slow_coffee: 'Slow coffee · fast service',
     categories: {
-      espresso: 'Espresso',
-      filter: 'Filtrados',
-      matcha: 'Matcha & Té',
-      cold: 'Fríos',
+      espresso: 'Calientes',
+      filter: 'Sin Azúcar',
+      matcha: 'Matcha',
+      cold: 'Frías & Frappe',
       smoothie: 'Smoothies',
-      toast: 'Tostadas',
+      toast: 'Alimentos',
       pastry: 'Pastelería',
       cake: 'Postres',
     },
@@ -74,14 +74,14 @@ const T = {
     tap_to_start: 'Tap to begin',
     slow_coffee: 'Slow coffee · fast service',
     categories: {
-      espresso: 'Espresso',
-      filter: 'Filter',
-      matcha: 'Matcha & Tea',
-      cold: 'Cold brew',
+      espresso: 'Hot drinks',
+      filter: 'Sugar-free',
+      matcha: 'Matcha',
+      cold: 'Cold & Frappe',
       smoothie: 'Smoothies',
-      toast: 'Toast',
+      toast: 'Food',
       pastry: 'Pastry',
-      cake: 'Dessert',
+      cake: 'Desserts',
     },
     size: 'Size',
     milk: 'Milk',
@@ -234,4 +234,160 @@ const CUSTOM = {
   },
 };
 
-Object.assign(window, { T, MENU, CUSTOM });
+// ── Mapeo de categorías Firestore → revamp ────────────────────────────────
+const FS_CAT_MAP = {
+  // Bebidas calientes (KonCafe real)
+  'calientes': 'espresso',
+  'espresso': 'espresso',
+  'cafe-caliente': 'espresso',
+  'latte': 'espresso',
+  // Sin azúcar / espresso puro (KonCafe real)
+  'sin-azucar': 'filter',
+  'filtrados': 'filter',
+  'filter': 'filter',
+  'americano': 'filter',
+  // Matcha y té
+  'matcha': 'matcha',
+  'te': 'matcha',
+  'té': 'matcha',
+  // Frías / Frappe / Cold Brew (KonCafe real)
+  'frios': 'cold',
+  'cold-brew': 'cold',
+  'cafe-frio': 'cold',
+  'frappe': 'cold',
+  'cold': 'cold',
+  // Smoothies
+  'smoothies': 'smoothie',
+  'smoothie': 'smoothie',
+  // Alimentos salados (KonCafe real)
+  'alimentos': 'toast',
+  'salados': 'toast',
+  'tostadas': 'toast',
+  'toast': 'toast',
+  // Pastelería
+  'reposteria': 'pastry',
+  'pastry': 'pastry',
+  'pan': 'pastry',
+  // Postres (KonCafe real)
+  'postres': 'cake',
+  'postre': 'cake',
+  'cake': 'cake',
+};
+
+// ── Art por categoría Firestore original ──────────────────────────────────
+const ART_MAP = {
+  'calientes': 'latte',
+  'sin-azucar': 'espresso',
+  'frios': 'cold',
+  'cold-brew': 'cold',
+  'matcha': 'matcha',
+  'alimentos': 'toast',
+  'postres': 'cake',
+  'espresso': 'espresso',
+  'latte': 'latte',
+  'filtrados': 'filter',
+  'smoothie': 'smoothie',
+  'smoothies': 'smoothie',
+  'pastry': 'pastry',
+  'reposteria': 'pastry',
+};
+
+// Construye CUSTOM dinámico desde los sizes y extras de Firestore
+function buildCustomFromFirestore(product) {
+  const cat = product.cat;
+  const base = CUSTOM[cat] || {};
+  const override = {};
+
+  // Sizes de Firestore → reemplaza el campo 'size' del schema
+  if (product._sizes && product._sizes.length > 0) {
+    const sizeOpts = product._sizes.map((s, i) => ({
+      k: s.name,
+      sub: s.name,
+      d: s.priceModifier || 0,
+      def: i === 0,
+    }));
+    override.size = {
+      label_es: 'Tamaño',
+      label_en: 'Size',
+      options: sizeOpts,
+    };
+  }
+
+  // Extras de Firestore → agrega al campo 'extras' del schema
+  if (product._extras && product._extras.length > 0) {
+    const extraOpts = product._extras.map(e => ({
+      k: e.name,
+      label_es: e.name,
+      label_en: e.name,
+      d: e.price || 0,
+    }));
+    override.extras = {
+      label_es: 'Extras',
+      label_en: 'Extras',
+      multi: true,
+      options: extraOpts,
+    };
+  }
+
+  return Object.keys(override).length > 0 ? { ...base, ...override } : base;
+}
+
+// Guarda esquemas de customización por productId (para detail.jsx)
+const CUSTOM_FS = {};
+
+// Carga productos reales de Firestore y actualiza el global MENU
+async function loadMenuFromFirestore() {
+  try {
+    const snap = await db.collection('menu').where('available', '==', true).get();
+    if (snap.empty) return null;
+
+    const mapped = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const rawCat = (d.category || '').toLowerCase().trim();
+      const cat    = FS_CAT_MAP[rawCat] || 'espresso';
+
+      const art = ART_MAP[rawCat] || cat;
+      const product = {
+        id:      doc.id,
+        cat,
+        art,
+        name_es: d.name || 'Producto',
+        name_en: d.name || 'Product',
+        kr:      d.name || '',
+        price:   d.price || 0,
+        desc_es: d.description || '',
+        desc_en: d.description || '',
+        tag:     null,
+        _sizes:  d.sizes  || [],
+        _extras: d.extras || [],
+      };
+
+      // Construir CUSTOM_FS dinámico para este producto
+      CUSTOM_FS[doc.id] = buildCustomFromFirestore(product);
+
+      mapped.push(product);
+    });
+
+    // Ordenar: bebidas primero, luego alimentos
+    const ORDER = ['espresso','filter','matcha','cold','smoothie','toast','pastry','cake'];
+    mapped.sort((a, b) => {
+      const ai = ORDER.indexOf(a.cat);
+      const bi = ORDER.indexOf(b.cat);
+      if (ai !== bi) return ai - bi;
+      return a.name_es.localeCompare(b.name_es);
+    });
+
+    // Actualizar global MENU para que ScreenMenu lo use en el siguiente render
+    window.MENU = mapped;
+    window.CUSTOM_FS = CUSTOM_FS;
+
+    console.log(`[Koncaffe] Menú cargado de Firestore: ${mapped.length} productos`);
+    return mapped;
+  } catch (err) {
+    console.warn('[Koncaffe] No se pudo cargar el menú de Firestore:', err.message);
+    return null;
+  }
+}
+
+Object.assign(window, { T, MENU, CUSTOM, CUSTOM_FS, loadMenuFromFirestore });

@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "koncafe-106af"
+  },
+  "targets": {
+    "koncafe-106af": {
+      "hosting": {
+        "koncafe-revamp": ["koncafe-revamp"]
+      }
+    }
+  }
+}

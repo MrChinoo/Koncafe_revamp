@@ -1,15 +1,101 @@
 // Loyalty login + reveal moment. `reveal` variant: 'card' | 'scanner' | 'burst'
 function ScreenLoyalty({ t, lang, onSignIn, onSkip, user, reveal = 'card' }) {
-  const [mode, setMode] = React.useState('choose'); // choose | phone | qr | success
+  const [mode, setMode] = React.useState('choose'); // choose | phone | qr | google | success
   const [phone, setPhone] = React.useState('');
   const [successData, setSuccessData] = React.useState(null);
+  const [authError, setAuthError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
-  const finish = () => {
-    const data = { name: 'Ana M.', initial: 'A', points: 340, tier: 'Matcha' };
-    setSuccessData(data);
-    setMode('success');
-    setTimeout(() => onSignIn(data), 2200);
-  };
+  // Si ya hay usuario logueado, mostrar reveal directo
+  React.useEffect(() => {
+    if (user && user.uid) {
+      setSuccessData(user);
+      setMode('success');
+      const t = setTimeout(() => onSignIn(user), 2200);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  async function signInWithGoogle() {
+    setLoading(true);
+    setAuthError('');
+    try {
+      const result = await auth.signInWithPopup(googleProvider);
+      const fbUser = result.user;
+      const userData = await getOrCreateUser(fbUser);
+      const appUser = {
+        uid: fbUser.uid,
+        name: fbUser.displayName || userData.name || 'Usuario',
+        initial: (fbUser.displayName || userData.name || 'U')[0].toUpperCase(),
+        points: userData.points || 0,
+        tier: userData.tier || 'verde',
+        email: fbUser.email,
+      };
+      setSuccessData(appUser);
+      setMode('success');
+      setTimeout(() => onSignIn(appUser), 2200);
+    } catch (err) {
+      console.error('Google auth error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setAuthError('');
+      } else {
+        setAuthError(lang === 'es' ? 'Error al iniciar sesión. Intenta de nuevo.' : 'Sign-in error. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Phone: busca en Firestore por campo (número demo → crea usuario temporal)
+  async function finishWithPhone() {
+    setLoading(true);
+    try {
+      // Buscar usuario por teléfono en Firestore
+      const snap = await db.collection('users').where('phone', '==', phone).limit(1).get();
+      let appUser;
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        appUser = {
+          uid: snap.docs[0].id,
+          name: userData.name || 'Usuario',
+          initial: (userData.name || 'U')[0].toUpperCase(),
+          points: userData.points || 0,
+          tier: userData.tier || 'verde',
+        };
+      } else {
+        // Usuario no encontrado — crear guest con puntos en cero
+        appUser = {
+          uid: `phone-${phone}`,
+          name: lang === 'es' ? 'Cliente' : 'Customer',
+          initial: 'C',
+          points: 0,
+          tier: 'verde',
+        };
+      }
+      setSuccessData(appUser);
+      setMode('success');
+      setTimeout(() => onSignIn(appUser), 2200);
+    } catch (err) {
+      console.error('Phone lookup error:', err);
+      // Fallback: continuar como invitado numerado
+      const appUser = {
+        uid: `phone-${phone}`,
+        name: lang === 'es' ? 'Cliente' : 'Customer',
+        initial: 'C',
+        points: 0,
+        tier: 'verde',
+      };
+      setSuccessData(appUser);
+      setMode('success');
+      setTimeout(() => onSignIn(appUser), 2200);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function finishQR() {
+    signInWithGoogle();
+  }
 
   return (
     <div data-screen-label="05 Loyalty" style={{ height: '100%', display: 'flex', background: 'var(--ivory)' }}>
@@ -60,6 +146,38 @@ function ScreenLoyalty({ t, lang, onSignIn, onSkip, user, reveal = 'card' }) {
               {lang === 'es' ? 'Identifícate' : 'Sign in'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
+
+              {/* Google Sign-In — método principal */}
+              <button onClick={signInWithGoogle} disabled={loading} style={{
+                padding: 24, borderRadius: 'var(--r-lg)', background: 'var(--ivory)',
+                display: 'flex', alignItems: 'center', gap: 20, textAlign: 'left',
+                boxShadow: 'var(--shadow-xs)',
+                opacity: loading ? 0.6 : 1,
+              }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: 'var(--r-md)', background: '#fff',
+                  border: '1.5px solid #e0e0e0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {/* Google logo SVG */}
+                  <svg width="28" height="28" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 17, fontWeight: 600 }}>
+                    {loading ? (lang === 'es' ? 'Iniciando…' : 'Signing in…') : (lang === 'es' ? 'Continuar con Google' : 'Continue with Google')}
+                  </div>
+                  <div className="t-sm" style={{ color: 'var(--taupe)', marginTop: 4 }}>
+                    {lang === 'es' ? 'Rápido y seguro' : 'Fast and secure'}
+                  </div>
+                </div>
+                {Icon.arrow}
+              </button>
+
               <button onClick={() => setMode('qr')} style={{
                 padding: 24, borderRadius: 'var(--r-lg)', background: 'var(--ivory)',
                 display: 'flex', alignItems: 'center', gap: 20, textAlign: 'left',
@@ -96,15 +214,23 @@ function ScreenLoyalty({ t, lang, onSignIn, onSkip, user, reveal = 'card' }) {
                 {Icon.arrow}
               </button>
             </div>
+
+            {authError && (
+              <div style={{
+                marginTop: 16, padding: '12px 16px', borderRadius: 'var(--r-sm)',
+                background: 'rgba(184,95,66,0.1)', color: 'var(--terracotta-deep)',
+                fontSize: 14, fontWeight: 500,
+              }}>{authError}</div>
+            )}
           </>
         )}
 
         {mode === 'phone' && (
           <PhonePad phone={phone} setPhone={setPhone} lang={lang}
-            onBack={() => setMode('choose')} onSubmit={finish} />
+            onBack={() => setMode('choose')} onSubmit={finishWithPhone} loading={loading} />
         )}
 
-        {mode === 'qr' && <QRScanner lang={lang} onBack={() => setMode('choose')} onDetect={finish} />}
+        {mode === 'qr' && <QRScanner lang={lang} onBack={() => setMode('choose')} onDetect={finishQR} />}
 
         {mode === 'success' && successData && (
           <LoyaltyReveal data={successData} lang={lang} variant={reveal} />
@@ -114,7 +240,7 @@ function ScreenLoyalty({ t, lang, onSignIn, onSkip, user, reveal = 'card' }) {
   );
 }
 
-function PhonePad({ phone, setPhone, onBack, onSubmit, lang }) {
+function PhonePad({ phone, setPhone, onBack, onSubmit, lang, loading }) {
   const press = (d) => setPhone((phone + d).slice(0, 10));
   const del = () => setPhone(phone.slice(0, -1));
   const formatted = phone.length > 0 ? phone.replace(/(\d{3})(\d{0,3})(\d{0,4})/, (_, a, b, c) => [a, b, c].filter(Boolean).join(' ')) : '';
@@ -160,12 +286,12 @@ function PhonePad({ phone, setPhone, onBack, onSubmit, lang }) {
         }}>⌫</button>
       </div>
 
-      <button onClick={onSubmit} disabled={phone.length < 10} style={{
+      <button onClick={onSubmit} disabled={phone.length < 10 || loading} style={{
         marginTop: 16, padding: 20, borderRadius: 'var(--r-pill)',
-        background: phone.length < 10 ? 'var(--sand)' : 'var(--charcoal)',
+        background: phone.length < 10 || loading ? 'var(--sand)' : 'var(--charcoal)',
         color: 'var(--ivory)', fontSize: 16, fontWeight: 600,
-        opacity: phone.length < 10 ? 0.5 : 1,
-      }}>{lang === 'es' ? 'Continuar' : 'Continue'} →</button>
+        opacity: phone.length < 10 || loading ? 0.5 : 1,
+      }}>{loading ? (lang === 'es' ? 'Buscando…' : 'Looking up…') : (lang === 'es' ? 'Continuar' : 'Continue')} →</button>
     </>
   );
 }
@@ -185,7 +311,7 @@ function QRScanner({ onBack, onDetect, lang }) {
 
       <div className="t-h3">{lang === 'es' ? 'Acerca tu código' : 'Hold your code'}</div>
       <div className="t-sm" style={{ color: 'var(--taupe)', marginTop: 6 }}>
-        {lang === 'es' ? 'Alinea con el lector inferior' : 'Align with the scanner below'}
+        {lang === 'es' ? 'Inicia sesión con Google automáticamente' : 'Signs you in with Google automatically'}
       </div>
 
       <div style={{
@@ -193,7 +319,6 @@ function QRScanner({ onBack, onDetect, lang }) {
         background: '#1a1612', position: 'relative', overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {/* corner brackets */}
         {[
           { top: 24, left: 24, borderTop: '3px solid #fff', borderLeft: '3px solid #fff' },
           { top: 24, right: 24, borderTop: '3px solid #fff', borderRight: '3px solid #fff' },
@@ -202,7 +327,6 @@ function QRScanner({ onBack, onDetect, lang }) {
         ].map((s, i) => (
           <div key={i} style={{ position: 'absolute', width: 40, height: 40, ...s }} />
         ))}
-        {/* scanning line */}
         <div style={{
           position: 'absolute', left: 50, right: 50, height: 2, background: 'var(--terracotta)',
           boxShadow: '0 0 12px var(--terracotta)',
@@ -211,7 +335,7 @@ function QRScanner({ onBack, onDetect, lang }) {
         <style>{`@keyframes scanLine { from { top: 30%; } to { top: 70%; } }`}</style>
         <div className="kr" style={{ color: '#fff', fontSize: 56, fontWeight: 700, opacity: 0.15 }}>콘</div>
         <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
-          {lang === 'es' ? 'Escaneando…' : 'Scanning…'}
+          {lang === 'es' ? 'Abriendo Google…' : 'Opening Google…'}
         </div>
       </div>
     </>
@@ -232,6 +356,8 @@ function LoyaltyReveal({ data, lang, variant }) {
     return () => cancelAnimationFrame(raf);
   }, [data.points]);
 
+  const tierLabel = data.tier === 'oro' ? (lang === 'es' ? 'Tier Oro ✦' : 'Gold Tier ✦') : (lang === 'es' ? 'Tier Verde' : 'Green Tier');
+
   if (variant === 'burst') {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
@@ -240,7 +366,6 @@ function LoyaltyReveal({ data, lang, variant }) {
           background: 'radial-gradient(circle, rgba(217,119,87,0.25), transparent 60%)',
           animation: 'softFade 700ms ease-out',
         }} />
-        {/* concentric rings */}
         {[0, 1, 2].map(i => (
           <div key={i} style={{
             position: 'absolute', width: 240, height: 240, borderRadius: 999,
@@ -254,6 +379,7 @@ function LoyaltyReveal({ data, lang, variant }) {
           <div className="t-h2" style={{ marginTop: 10 }}>{lang === 'es' ? 'Bienvenida,' : 'Welcome,'} {data.name.split(' ')[0]}</div>
           <div className="mono" style={{ fontSize: 72, fontWeight: 700, color: 'var(--terracotta)', marginTop: 16 }}>{counted}</div>
           <div className="t-micro" style={{ color: 'var(--taupe)' }}>{lang === 'es' ? 'PUNTOS DISPONIBLES' : 'POINTS AVAILABLE'}</div>
+          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: data.tier === 'oro' ? '#d97706' : '#059669' }}>{tierLabel}</div>
         </div>
       </div>
     );
@@ -270,7 +396,7 @@ function LoyaltyReveal({ data, lang, variant }) {
           {lang === 'es' ? 'Identificado' : 'Verified'}
         </div>
         <div className="t-h2" style={{ marginTop: 14 }}>{lang === 'es' ? 'Hola,' : 'Hi,'} {data.name}</div>
-        <div className="t-body-lg" style={{ color: 'var(--taupe)', marginTop: 6 }}>Koncaffe Club · Tier {data.tier}</div>
+        <div className="t-body-lg" style={{ color: 'var(--taupe)', marginTop: 6 }}>Koncaffe Club · {tierLabel}</div>
         <div style={{
           marginTop: 28, padding: 24, background: 'var(--ivory)', borderRadius: 'var(--r-lg)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -302,7 +428,7 @@ function LoyaltyReveal({ data, lang, variant }) {
         <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: 999, background: 'rgba(217,119,87,0.3)', filter: 'blur(30px)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div>
-            <div className="t-micro" style={{ opacity: 0.7 }}>KONCAFFE CLUB · {data.tier.toUpperCase()}</div>
+            <div className="t-micro" style={{ opacity: 0.7 }}>KONCAFFE CLUB · {(data.tier || 'verde').toUpperCase()}</div>
             <div className="mono" style={{ fontSize: 56, fontWeight: 700, marginTop: 20 }}>{counted}</div>
             <div className="t-xs" style={{ opacity: 0.7, marginTop: 4 }}>
               {lang === 'es' ? 'puntos disponibles' : 'points available'}
@@ -311,8 +437,8 @@ function LoyaltyReveal({ data, lang, variant }) {
           <div className="kr" style={{ fontSize: 48, fontWeight: 700, opacity: 0.4 }}>콘</div>
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 24, fontSize: 12, opacity: 0.7 }}>
-          <div>⬥ {lang === 'es' ? '12 visitas' : '12 visits'}</div>
-          <div>⬥ {lang === 'es' ? '1 bebida gratis disponible' : '1 free drink ready'}</div>
+          <div>⬥ {tierLabel}</div>
+          {data.tier === 'oro' && <div>⬥ {lang === 'es' ? 'Bebida gratis disponible' : 'Free drink ready'}</div>}
         </div>
       </div>
     </div>
