@@ -33,6 +33,15 @@
   .tweak-opts button.active { background: var(--charcoal); color: var(--ivory); border-color: var(--charcoal); }
 </style>
 
+<!-- Firebase compat SDK v9 — cargado antes de firebase.js y los JSX -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<!-- Config Firebase + helpers globales (db, auth, googleProvider, recordSale, awardPoints) -->
+<script src="firebase.js"></script>
+
+<!-- React + Babel standalone -->
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -51,6 +60,7 @@
 <script type="text/babel" src="screens/loyalty.jsx"></script>
 <script type="text/babel" src="screens/payment.jsx"></script>
 <script type="text/babel" src="screens/confirm.jsx"></script>
+<script type="text/babel" src="screens/barista.jsx"></script>
 
 <script type="text/babel">
 const TWEAK_DEFAULTS = {
@@ -71,16 +81,44 @@ function App() {
   const [lastTotal, setLastTotal] = React.useState(0);
   const [lastMethod, setLastMethod] = React.useState('card');
   const [lastInvoice, setLastInvoice] = React.useState(null);
+  const [lastOrderId, setLastOrderId] = React.useState(null);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
 
   const t = T[lang];
 
   React.useEffect(() => { localStorage.setItem('konc_lang', lang); }, [lang]);
-  React.useEffect(() => { localStorage.setItem('konc_step', step); }, [step]);
+  // No persistir 'barista' en localStorage para que al recargar vuelva a attract
+  React.useEffect(() => {
+    if (step !== 'barista') localStorage.setItem('konc_step', step);
+  }, [step]);
   React.useEffect(() => { localStorage.setItem('konc_cart', JSON.stringify(cart)); }, [cart]);
   React.useEffect(() => { localStorage.setItem('konc_user', JSON.stringify(user)); }, [user]);
 
-  // scale stage to fit viewport
+  // Escuchar cambios de auth de Firebase — sincroniza puntos reales
+  React.useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (fbUser) => {
+      if (fbUser) {
+        try {
+          const userData = await getOrCreateUser(fbUser);
+          const appUser = {
+            uid: fbUser.uid,
+            name: fbUser.displayName || userData.name,
+            initial: (fbUser.displayName || userData.name || 'U')[0].toUpperCase(),
+            points: userData.points || 0,
+            tier: userData.tier || 'verde',
+            email: fbUser.email,
+          };
+          setUser(appUser);
+        } catch (e) {
+          console.error('Auth state error:', e);
+        }
+      }
+      // No llamar setUser(null) aquí para no borrar el usuario demo si Firebase falla
+    });
+    return unsubscribe;
+  }, []);
+
+  // Escalar stage al viewport
   React.useEffect(() => {
     const stage = document.getElementById('stage');
     const fit = () => {
@@ -96,7 +134,6 @@ function App() {
   // Tweaks UI
   React.useEffect(() => {
     const panel = document.getElementById('tweaks');
-
     const render = () => {
       const opts = (key, values) => values.map(v =>
         `<button class="${tweaks[key] === v ? 'active' : ''}" data-k="${key}" data-v="${v}">${v}</button>`
@@ -114,6 +151,7 @@ function App() {
           <div class="tweak-opts">${opts('loyaltyReveal', ['card', 'scanner', 'burst'])}</div></div>
         <div style="margin-top:12px;display:flex;gap:8px;">
           <button style="flex:1;padding:10px;border-radius:10px;background:var(--cream);border:none;font-size:12px;font-weight:600;cursor:pointer;" id="tw-reset">Reset flow</button>
+          <button style="flex:1;padding:10px;border-radius:10px;background:#2a2620;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;" id="tw-barista">Barista →</button>
         </div>
       `;
       panel.querySelectorAll('[data-k]').forEach(b => {
@@ -124,10 +162,11 @@ function App() {
       });
       document.getElementById('tw-reset').onclick = () => {
         setStep('attract'); setCart([]); setUser(null); setPromo(''); setRedeem(0);
+        auth.signOut().catch(() => {});
       };
+      document.getElementById('tw-barista').onclick = () => setStep('barista');
     };
     render();
-
     const onMsg = (e) => {
       if (!e.data || typeof e.data !== 'object') return;
       if (e.data.type === '__activate_edit_mode') { panel.classList.add('open'); }
@@ -148,29 +187,48 @@ function App() {
           onCart={() => goto('cart')} onHome={() => goto('menu')} step={step} />
         <FlowSteps step={step} lang={lang} />
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {step === 'attract' && <ScreenAttract t={t} lang={lang} setLang={setLang} onStart={() => goto('menu')} />}
+          {step === 'attract' && (
+            <ScreenAttract t={t} lang={lang} setLang={setLang}
+              onStart={() => goto('menu')}
+              onBarista={() => goto('barista')} />
+          )}
           {step === 'menu' && <ScreenMenu t={t} lang={lang} cart={cart} onAdd={addToCart} onOpen={openProduct} layout={tweaks.menuLayout} />}
           {step === 'detail' && <ScreenDetail t={t} lang={lang} product={product} onBack={() => goto('menu')} onAdd={addToCart} variant={tweaks.detailVariant} />}
-          {step === 'cart' && <ScreenCart t={t} lang={lang} cart={cart} setCart={setCart} user={user}
-            onBack={() => goto('menu')} onNext={() => goto(user ? 'payment' : 'loyalty')}
-            promo={promo} setPromo={setPromo} />}
-          {step === 'loyalty' && <ScreenLoyalty t={t} lang={lang}
-            onSignIn={(u) => { setUser(u); goto('payment'); }}
-            onSkip={() => goto('payment')}
-            user={user} reveal={tweaks.loyaltyReveal} />}
-          {step === 'payment' && <ScreenPayment t={t} lang={lang} cart={cart} user={user} promo={promo} redeem={redeem}
-            onBack={() => goto('cart')}
-            onDone={(r) => {
-              setLastTotal(r.total); setLastMethod(r.method); setLastInvoice(r.invoice);
-              setOrderNumber(o => o + 1);
-              if (user) setUser({ ...user, points: user.points - (redeem || 0) + Math.round(r.total / 10) });
-              goto('confirm');
-            }} />}
-          {step === 'confirm' && <ScreenConfirm t={t} lang={lang}
-            orderNumber={orderNumber} cart={cart} total={lastTotal} method={lastMethod}
-            invoice={lastInvoice}
-            earned={user ? Math.round(lastTotal / 10) : 0}
-            onReset={() => { setCart([]); setPromo(''); setRedeem(0); goto('attract'); }} />}
+          {step === 'cart' && (
+            <ScreenCart t={t} lang={lang} cart={cart} setCart={setCart} user={user}
+              onBack={() => goto('menu')} onNext={() => goto(user ? 'payment' : 'loyalty')}
+              promo={promo} setPromo={setPromo} redeem={redeem} setRedeem={setRedeem} />
+          )}
+          {step === 'loyalty' && (
+            <ScreenLoyalty t={t} lang={lang}
+              onSignIn={(u) => { setUser(u); goto('payment'); }}
+              onSkip={() => goto('payment')}
+              user={user} reveal={tweaks.loyaltyReveal} />
+          )}
+          {step === 'payment' && (
+            <ScreenPayment t={t} lang={lang} cart={cart} user={user} promo={promo} redeem={redeem}
+              onBack={() => goto('cart')}
+              onDone={(r) => {
+                setLastTotal(r.total);
+                setLastMethod(r.method);
+                setLastInvoice(r.invoice);
+                setLastOrderId(r.orderId);
+                setOrderNumber(o => o + 1);
+                if (user) setUser(prev => prev ? { ...prev, points: (prev.points || 0) - (redeem || 0) + Math.round(r.total / 10) } : prev);
+                goto('confirm');
+              }} />
+          )}
+          {step === 'confirm' && (
+            <ScreenConfirm t={t} lang={lang}
+              orderNumber={orderNumber} cart={cart} total={lastTotal} method={lastMethod}
+              invoice={lastInvoice} orderId={lastOrderId}
+              earned={user ? Math.round(lastTotal / 10) : 0}
+              onReset={() => { setCart([]); setPromo(''); setRedeem(0); goto('attract'); }} />
+          )}
+          {step === 'barista' && (
+            <ScreenBarista t={t} lang={lang}
+              onExit={() => goto('attract')} />
+          )}
         </div>
       </div>
     </KioskFrame>
