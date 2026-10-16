@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f4ee" />
+    <meta
+      name="description"
+      content="Explora el kiosco de pedidos KonCafe: personaliza bebidas, arma tu pedido y conoce una experiencia de cafetería digital. Demostración interactiva sin cobros reales."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>KonCafe — Kiosco de pedidos · Demo</title>
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="site-header" id="site-header"></header>
+      <main id="app" tabindex="-1"></main>
+      <footer class="site-footer">
+        <span
+          >KonCafe <span class="footer-sparkle">✳</span> Kiosco
+          interactivo</span
+        >
+        <span>Demostración comercial · Sin cobros ni pedidos reales</span>
+      </footer>
+    </div>
+    <div id="modal-root"></div>
+    <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <style>
+      .bg { fill: transparent }
+      .mark { fill: #1C1917 }
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: #1C1917 }
+        .mark { fill: #EDE8D0 }
+      }
+    </style>
+  </defs>
+  <rect width="512" height="512" class="bg"/>
+  <!-- O ring -->
+  <path class="mark" fill-rule="evenodd" d="M262,143 L388,143 L418,173 L418,348 L388,378 L262,378 L198,348 L198,173 Z M278,171 L370,171 L392,195 L392,326 L370,350 L278,350 L226,326 L226,195 Z"/>
+  <!-- K top stub -->
+  <rect class="mark" x="110" y="143" width="40" height="33"/>
+  <!-- K diagonal -->
+  <polygon class="mark" points="143,170 192,170 335,378 286,378"/>
+  <!-- K bottom foot -->
+  <rect class="mark" x="110" y="360" width="62" height="28"/>
+</svg>

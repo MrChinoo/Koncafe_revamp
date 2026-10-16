@@ -1,26 +1,40 @@
 {
   "hosting": {
     "site": "koncafe-revamp",
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      ".firebaserc",
-      "CLAUDE.md",
-      "firestore.rules",
-      ".git/**",
-      "node_modules/**",
-      "Koncaffe Kiosk.html"
-    ],
+    "public": "site",
+    "ignore": ["**/.*", "**/node_modules/**"],
     "headers": [
       {
-        "source": "**/*.jsx",
+        "source": "**",
         "headers": [
-          { "key": "Content-Type", "value": "application/javascript" }
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+          },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "DENY" },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=(), payment=()"
+          }
         ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+      },
+      {
+        "source": "**/*.css",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
       }
     ]
-  },
-  "firestore": {
-    "rules": "firestore.rules"
   }
 }
