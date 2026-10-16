@@ -388,7 +388,7 @@ function renderHeader() {
   );
   controls.append(
     button(`Tu pedido  ${quantity()}`, () => go("cart"), "button cart-button", {
-      "aria-label": `Ver pedido, ${quantity()} productos`,
+      "aria-label": `Ver pedido, ${quantity()} ${quantity() === 1 ? "producto" : "productos"}`,
     }),
   );
   header.replaceChildren(
@@ -1179,9 +1179,16 @@ function renderCheckout() {
 }
 function placeOrder() {
   if (!state.cart.length) return;
+  let number;
+  const existingNumbers = new Set(state.orders.map((order) => order.number));
+  do {
+    const random = new Uint16Array(1);
+    crypto.getRandomValues(random);
+    number = `D-${String(1000 + (random[0] % 9000))}`;
+  } while (existingNumbers.has(number));
   const order = {
     id: crypto.randomUUID(),
-    number: `D-${String(Math.floor(100 + Math.random() * 900))}`,
+    number,
     createdAt: Date.now(),
     status: "pending",
     service: state.service,
