@@ -100,6 +100,7 @@ export function renderDemoBar(root, mode) {
       h("p", { class: "demo-id" },
         h("span", { class: "demo-pulse", "aria-hidden": "true" }),
         h("strong", {}, t("demo.label")),
+        h("span", { class: "demo-mobile" }, t("demo.short")),
         h("span", { class: "demo-note" }, t("demo.note")),
       ),
       h("nav", { class: "mode-switch", "aria-label": "Modo de la demo" },

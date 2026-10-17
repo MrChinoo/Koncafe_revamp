@@ -51,16 +51,20 @@ function mount({ route, params }, { focus = true } = {}) {
   renderDemoBar(demoBar, screen.mode);
   view.replaceChildren(instance.el);
   mounted = { screen, instance, params };
+  const heading = instance.el.querySelector("h1");
+  if (heading) {
+    // Las líneas de título son spans hermanos: textContent no añade espacios.
+    const lines = [...heading.querySelectorAll(":scope > .display-line, :scope > .block")];
+    const headingText = (lines.length ? lines.map((line) => line.textContent).join(" ") : heading.textContent)
+      .replace(/\s+/g, " ").trim();
+    document.title = `${headingText} · Koyo`;
+    announce(headingText);
+  }
   if (focus) {
     window.scrollTo({ top: 0, behavior: "instant" });
     const target = instance.focus ?? view;
     if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
     target.focus({ preventScroll: true });
-    const heading = instance.el.querySelector("h1");
-    if (heading) {
-      document.title = `${heading.textContent.replace(/\s+/g, " ").trim()} · Koyo`;
-      announce(heading.textContent);
-    }
   }
 }
 
