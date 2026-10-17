@@ -1,6 +1,6 @@
 # Koyo 고요 · Briefing e identidad de la demo
 
-> Documento rector del kiosco demo publicado en `koncafe-revamp.web.app` y
+> Documento rector del kiosco demo publicado en `cafeteria.joabgaribay.com` y
 > mostrado en `joabgaribay.com/sitios`. Toda decisión visual o de producto de
 > la demo debe poder justificarse con este documento.
 
@@ -12,7 +12,7 @@
 |---|---|
 | **Qué es** | Demostración comercial interactiva del kiosco de autoservicio que opera en producción (`KonCafe_Estable`), presentada con una marca ficticia propia: **Koyo 고요**. |
 | **Para quién** | Dueños y gerentes de cafeterías, panaderías y coffee shops que evalúan digitalizar su mostrador. |
-| **Dónde vive** | Enlazada desde el portafolio `joabgaribay.com/sitios`. Se abre en laptop, tablet o celular, casi siempre por primera vez y sin guía. |
+| **Dónde vive** | `cafeteria.joabgaribay.com`, enlazada desde el portafolio `joabgaribay.com/sitios`. Se abre en laptop, tablet o celular, casi siempre por primera vez y sin guía. |
 | **Qué debe lograr** | Que en menos de 2 minutos el visitante entienda el flujo completo —pedir, pagar, preparar y medir— y lo sienta tan pulido como para imaginarlo en su propio local. |
 | **Qué NO es** | No cobra, no factura, no envía pedidos y no se conecta a Firebase Auth/Firestore. Todo se simula en el navegador. |
 

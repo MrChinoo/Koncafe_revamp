@@ -192,7 +192,7 @@ table { border-collapse: collapse; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 10px; border-radius: var(--r-pill);
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;
 }
 .chip .icon { width: 14px; height: 14px; }
 .chip--matcha { background: var(--leaf); color: var(--matcha); }
@@ -275,11 +275,12 @@ table { border-collapse: collapse; }
 .demo-id { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .demo-id strong { font-family: var(--font-display); font-weight: 700; white-space: nowrap; }
 .demo-note { color: var(--night-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.demo-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; animation: pulse 2.4s ease-in-out infinite; }
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(143, 168, 131, 0.55); }
-  50% { box-shadow: 0 0 0 6px rgba(143, 168, 131, 0); }
+.demo-pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+.demo-pulse::after, .live-dot::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit;
+  animation: ring 2.4s ease-out infinite;
 }
+@keyframes ring { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.6); opacity: 0; } }
 .mode-switch {
   display: flex; gap: 2px; padding: 3px; border-radius: var(--r-pill);
   background: var(--night-mid);
@@ -304,7 +305,7 @@ table { border-collapse: collapse; }
 .demo-tool:hover { background: var(--night-mid); color: var(--night-ink); }
 .demo-tool .icon { width: 17px; height: 17px; }
 .demo-tool--icon { width: 36px; padding: 0; justify-content: center; }
-.demo-progress { color: var(--night-faint); font-size: 0.72rem; }
+.demo-progress { color: var(--night-faint); font-size: 0.75rem; }
 .demo-tool.has-dot::after {
   content: ""; position: absolute; top: 6px; left: 22px;
   width: 7px; height: 7px; border-radius: 50%; background: var(--clay-soft);
@@ -337,14 +338,14 @@ table { border-collapse: collapse; }
 .brand-text { display: grid; line-height: 1.1; }
 .brand-name { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; }
 .brand-kr { font-size: 0.8rem; font-weight: 500; color: var(--ink-faint); margin-left: 2px; }
-.brand-tag { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-top: 3px; }
+.brand-tag { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-top: 3px; }
 
 .steps { display: flex; align-items: center; gap: 6px; margin: 0 auto; }
 .step { display: flex; align-items: center; gap: 8px; color: var(--ink-faint); font-weight: 700; font-size: var(--fs-sm); }
 .step + .step::before { content: ""; width: 28px; height: 1.5px; border-radius: 2px; background: var(--paper-max); margin-right: 2px; }
 .step-dot {
   display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
-  background: var(--paper-high); font-size: 0.72rem;
+  background: var(--paper-high); font-size: 0.75rem;
   transition: background var(--t-comp) var(--ease), color var(--t-comp) var(--ease);
 }
 .step-dot .icon { width: 14px; height: 14px; }
@@ -403,6 +404,18 @@ table { border-collapse: collapse; }
 ::view-transition-group(product-hero) { animation-duration: 560ms; animation-timing-function: cubic-bezier(0.3, 0.7, 0.1, 1); }
 ::view-transition-old(product-hero), ::view-transition-new(product-hero) { height: 100%; object-fit: cover; }
 ::view-transition-group(topbar) { animation-duration: 0s; }
+/* Cambios dentro de la misma pantalla (filtros, listas): la página no se desliza,
+   sólo se reacomodan los elementos nombrados. */
+[data-nav="none"]::view-transition-old(root),
+[data-nav="none"]::view-transition-new(root) { animation: none; }
+::view-transition-group(.card),
+::view-transition-group(.item) { animation-duration: 460ms; animation-timing-function: var(--ease); }
+::view-transition-new(.card):only-child,
+::view-transition-new(.item):only-child { animation: vt-pop-in 380ms var(--ease) both; }
+::view-transition-old(.card):only-child,
+::view-transition-old(.item):only-child { animation: vt-pop-out 240ms ease both; }
+@keyframes vt-pop-in { from { opacity: 0; transform: scale(0.92) translateY(10px); } }
+@keyframes vt-pop-out { to { opacity: 0; transform: scale(0.94); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
@@ -482,11 +495,11 @@ table { border-collapse: collapse; }
 /* ── Avisos ─────────────────────────────────────────────────── */
 
 .toast-root {
-  position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 80;
+  position: fixed; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 80;
   display: grid; gap: 8px; justify-items: center;
-  transform: translateX(-50%);
   pointer-events: none;
 }
+.toast span { max-width: min(520px, calc(100vw - 96px)); }
 .toast {
   display: inline-flex; align-items: center; gap: 10px;
   padding: 12px 20px 12px 14px; border-radius: var(--r-pill);
@@ -572,7 +585,10 @@ table { border-collapse: collapse; }
 .boot-line::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--clay); border-radius: inherit; animation: boot-load 1.1s var(--ease-in-out) infinite; }
 @keyframes boot-breathe { from { opacity: 0.55; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
 @keyframes boot-load { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
-.is-ready .boot { opacity: 0; visibility: hidden; }
+/* Sólo se ve si el arranque tarda más de 250 ms. */
+.boot { animation: boot-appear 300ms ease 250ms both; }
+@keyframes boot-appear { from { opacity: 0; } }
+.is-ready .boot { animation: none; opacity: 0; visibility: hidden; }
 
 /* ── Responsivo del marco ───────────────────────────────────── */
 

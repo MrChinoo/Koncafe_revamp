@@ -8,7 +8,7 @@ import { countTo } from "./motion.js";
 import { openDialog, toast, announce } from "./ui.js";
 
 export function brandLockup({ compact = false } = {}) {
-  return h("a", { class: ["brand", compact && "brand--compact"], href: "#/", "aria-label": "Koyo — inicio", "data-no-start": "" },
+  return h("a", { class: ["brand", compact && "brand--compact"], href: "#/", title: "Koyo — inicio", "data-no-start": "" },
     h("span", { class: "brand-mark" }, logoMark()),
     h("span", { class: "brand-text" },
       h("span", { class: "brand-name" }, "Koyo ", h("span", { class: "kr brand-kr" }, "고요")),
@@ -108,6 +108,7 @@ export function renderDemoBar(root, mode) {
             class: ["mode-link", mode === m.id && "is-active"],
             href: `#${m.id === "kiosk" ? lastKioskPath() : m.path}`,
             "aria-current": mode === m.id ? "page" : undefined,
+            "aria-label": t(m.key),
           }, icon(m.icon), h("span", {}, t(m.key))),
         ),
       ),

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cafeteria.joabgaribay.com/sitemap.xml

@@ -10,10 +10,10 @@ const SECOND = 1000;
 // Ritmos de la demo (más rápidos que la operación real para que se note).
 const PACE = {
   kiosk: { start: 6 * SECOND, item: 7 * SECOND, deliver: 120 * SECOND },
-  sim: { start: 22 * SECOND, item: 16 * SECOND, deliver: 95 * SECOND },
-  spawnMin: 26 * SECOND,
-  spawnMax: 44 * SECOND,
-  maxActive: 7,
+  sim: { start: 20 * SECOND, item: 18 * SECOND, deliver: 40 * SECOND },
+  spawnMin: 20 * SECOND,
+  spawnMax: 34 * SECOND,
+  maxActive: 8,
 };
 
 function randomSelection(product) {
@@ -49,7 +49,8 @@ function simOrder(createdAt, status = "received") {
     status,
   });
   if (status === "preparing") {
-    order.startedAt = Math.max(createdAt, Date.now() - 6 * SECOND);
+    // Arranques escalonados para que los pedidos sembrados no terminen todos a la vez.
+    order.startedAt = Math.max(createdAt, Date.now() - Math.random() * 14 * SECOND);
     order.items = order.items.map((item, index) => ({ ...item, done: index === 0 && order.items.length > 1 }));
   }
   return order;

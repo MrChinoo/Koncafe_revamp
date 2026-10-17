@@ -4,7 +4,7 @@ import { t, productName, productDesc, lang } from "../i18n.js";
 import { CATEGORIES, PRODUCTS, defaultSelection } from "../data.js";
 import { navigate } from "../router.js";
 import { addToCart, cartTotals } from "../orders.js";
-import { countTo, flyTo, stagger, shared } from "../motion.js";
+import { countTo, flyTo, stagger, shared, transition } from "../motion.js";
 import { announce } from "../ui.js";
 
 // Filtros recordados mientras dura la sesión de pedido.
@@ -39,7 +39,7 @@ function productCard(product) {
     },
   }, icon("plus"));
 
-  return h("article", { class: "product-card reveal", role: "listitem" },
+  return h("article", { class: "product-card reveal", role: "listitem", dataset: { id: product.id } },
     h("button", {
       class: "card-hit",
       type: "button",
@@ -82,6 +82,29 @@ export default {
       grid.replaceChildren(...cards);
     };
 
+    // Reacomodo animado al filtrar: cada tarjeta recibe un nombre de transición sólo
+    // durante el cambio (así no interfiere con la transición entre pantallas).
+    const nameCards = (on) => {
+      for (const card of grid.querySelectorAll(".product-card")) {
+        if (on) {
+          card.style.setProperty("view-transition-name", `card-${card.dataset.id}`);
+          card.style.setProperty("view-transition-class", "card");
+          card.classList.remove("reveal");
+        } else {
+          card.style.removeProperty("view-transition-name");
+          card.style.removeProperty("view-transition-class");
+        }
+      }
+    };
+    const reflow = (update) => {
+      if (!document.startViewTransition) return update();
+      nameCards(true);
+      transition(() => {
+        update();
+        nameCards(true);
+      }, "none").then(() => nameCards(false));
+    };
+
     const drawRail = () => {
       rail.replaceChildren(...CATEGORIES.map((category) => {
         const count = category.id === "all" ? PRODUCTS.length : PRODUCTS.filter((p) => p.category === category.id).length;
@@ -92,9 +115,10 @@ export default {
           role: "tab",
           "aria-selected": String(selected),
           onClick: () => {
+            if (view.category === category.id) return;
             view.category = category.id;
             drawRail();
-            drawGrid();
+            reflow(drawGrid);
           },
         },
         h("span", { class: "cat-photo" }, h("img", { src: `/img/products/${category.image}-480.webp`, alt: "", width: 96, height: 96, loading: "lazy", decoding: "async" })),

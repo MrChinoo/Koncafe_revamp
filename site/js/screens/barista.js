@@ -5,6 +5,15 @@ import { productById, optionGroups } from "../data.js";
 import { advanceOrder, toggleItem, completeLane, slaState, activeOrders } from "../orders.js";
 import { store, completeGuide } from "../store.js";
 import { toast } from "../ui.js";
+import { reflowList } from "../motion.js";
+
+// Las acciones del barista animan el reacomodo de la cola; las del simulador no.
+let animateNext = false;
+const userAction = (fn) => () => {
+  animateNext = true;
+  fn();
+  completeGuide("s4");
+};
 
 const COPY = {
   es: {
@@ -70,15 +79,15 @@ function orderCard(order, lane, isNew) {
   const items = order.items.map((item, index) => ({ item, index })).filter(({ item }) => item.lane === lane);
   const laneDone = items.every(({ item }) => item.done);
   const action = order.status === "received"
-    ? h("button", { class: "bar-action", type: "button", onClick: () => { advanceOrder(order.id); completeGuide("s4"); } }, icon("arrow"), c("start"))
+    ? h("button", { class: "bar-action", type: "button", onClick: userAction(() => advanceOrder(order.id)) }, icon("arrow"), c("start"))
     : h("button", {
         class: "bar-action bar-action--primary",
         type: "button",
         disabled: laneDone,
-        onClick: () => { completeLane(order.id, lane); completeGuide("s4"); },
+        onClick: userAction(() => completeLane(order.id, lane)),
       }, icon("check"), c(lane === "drinks" ? "drinksReady" : "foodReady"));
 
-  return h("article", { class: ["ticket-card", isNew && "is-new", order.source === "kiosk" && "is-yours"], dataset: { id: order.id, status: order.status } },
+  return h("article", { class: ["ticket-card", isNew && "is-new", order.source === "kiosk" && "is-yours"], dataset: { id: order.id, status: order.status, vt: `tc-${order.id}-${lane}` } },
     h("header", { class: "tc-head" },
       slaRing(order),
       h("div", { class: "tc-id" },
@@ -163,14 +172,13 @@ export default {
       }
       const ready = orders.filter((o) => o.status === "ready");
       readyRow.replaceChildren(...(ready.length
-        ? ready.map((o) => h("div", { class: ["ready-pill", !seen.has(o.id) && "is-new"] },
+        ? ready.map((o) => h("div", { class: ["ready-pill", !seen.has(o.id) && "is-new"], dataset: { vt: `rp-${o.id}` } },
             h("strong", { class: "mono" }, o.number),
             h("span", {}, o.name || t("guest")),
-            h("button", { class: "bar-action bar-action--ghost", type: "button", onClick: () => {
+            h("button", { class: "bar-action bar-action--ghost", type: "button", onClick: userAction(() => {
               advanceOrder(o.id);
-              completeGuide("s4");
               toast(c("delivered", { n: o.number }), { iconName: "check", tone: "night" });
-            } }, c("deliver")),
+            }) }, c("deliver")),
           ))
         : [h("p", { class: "lane-empty lane-empty--inline" }, c("readyEmpty"))]));
       for (const o of orders) seen.add(o.id);
@@ -237,7 +245,10 @@ export default {
         if (state.orders !== prev.orders) {
           const fresh = state.orders.filter((o) => !prev.orders.some((p) => p.id === o.id));
           for (const o of fresh) toast(c("newOrder", { n: o.number }), { iconName: "bell", tone: "night" });
-          draw();
+          if (animateNext) {
+            animateNext = false;
+            reflowList(el, ".ticket-card, .ready-pill", draw);
+          } else draw();
         }
       },
       destroy: () => clearInterval(timer),

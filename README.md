@@ -2,7 +2,8 @@
 
 Demostración interactiva del kiosco que opera en producción (`KonCafe_Estable`),
 presentada con la marca ficticia **Koyo 고요** («quietud»). Publicada en
-`https://koncafe-revamp.web.app` y enlazada desde `joabgaribay.com/sitios`.
+**`https://cafeteria.joabgaribay.com`** (alias técnico `koncafe-revamp.web.app`) y enlazada
+desde `joabgaribay.com/sitios`.
 Muestra el negocio completo en tres vistas:
 
 | Vista | Ruta | Qué demuestra |
@@ -71,6 +72,13 @@ ni de CSP.
 
 Las fotos y los iconos se regeneran con `scripts/build-assets.mjs` (requiere
 `sharp` sólo en desarrollo; ver el encabezado del script).
+
+## Dominio
+
+`cafeteria.joabgaribay.com` es un dominio personalizado de Firebase Hosting del sitio
+`koncafe-revamp`. El DNS vive en Hostinger: un único registro **CNAME `cafeteria` →
+`koncafe-revamp.web.app.`** (TTL 300). Firebase emite y renueva el certificado SSL.
+La CSP permite incrustar la demo en iframes sólo desde `joabgaribay.com`.
 
 ## Publicar
 

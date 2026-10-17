@@ -81,13 +81,17 @@ store.subscribe((state, prev) => {
   if (state.guide !== prev.guide) renderDemoBar(demoBar, mounted.screen.mode);
 });
 
-startSimulation();
-startIdleWatcher();
-
-// Retira la pantalla de carga cuando las fuentes están listas (o a los 1.2 s).
+// La primera vista ya está montada: retiramos la pantalla de carga en el siguiente cuadro
+// (las fuentes usan font-display: swap, no hace falta esperarlas).
 const boot = document.getElementById("boot");
-Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 1200))]).then(() => {
+requestAnimationFrame(() => {
   document.documentElement.classList.add("is-ready");
-  boot?.addEventListener("transitionend", () => boot.remove(), { once: true });
-  setTimeout(() => boot?.remove(), 900);
+  setTimeout(() => boot?.remove(), 700);
 });
+
+// Simulador e inactividad no son necesarios para la primera pintura.
+const whenIdle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 400));
+whenIdle(() => {
+  startSimulation();
+  startIdleWatcher();
+}, { timeout: 1500 });

@@ -24,7 +24,7 @@
   padding: 10px 16px; border-radius: 18px; background: var(--night-low);
 }
 .metric strong { font-size: 1.5rem; line-height: 1.15; }
-.metric span { color: var(--night-faint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+.metric span { color: var(--night-faint); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
 .metric--clay strong { color: var(--clay-soft); }
 .metric--late strong { color: var(--late); }
 .sim-toggle {
@@ -47,7 +47,7 @@
 .lane-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--night-mid); color: var(--clay-soft); }
 .lane-icon .icon { width: 19px; height: 19px; }
 .lane-count { display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: var(--r-pill); background: var(--night-mid); font-size: 0.8rem; color: var(--night-soft); }
-.lane-legend { display: flex; gap: 12px; margin-left: auto; font-size: 0.72rem; color: var(--night-faint); font-weight: 600; }
+.lane-legend { display: flex; gap: 12px; margin-left: auto; font-size: 0.75rem; color: var(--night-faint); font-weight: 600; }
 .legend { display: inline-flex; align-items: center; gap: 5px; }
 .legend--ok .tone-dot { background: var(--ok); }
 .legend--warn .tone-dot { background: var(--warn); }
@@ -81,7 +81,7 @@
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--tone) 16%, transparent); color: var(--tone);
-  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
 }
 .tone-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone, currentColor); flex: none; }
 .ticket-card[data-tone="late"] .tone-dot { animation: blink 1s ease-in-out infinite; }
@@ -93,7 +93,7 @@
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 9px; border-radius: var(--r-pill);
   background: var(--night-high); color: var(--night-soft);
-  font-size: 0.72rem; font-weight: 700;
+  font-size: 0.75rem; font-weight: 700;
 }
 .bar-chip .icon { width: 14px; height: 14px; }
 .bar-chip--yours { background: var(--clay-soft); color: #fff; }
@@ -132,7 +132,7 @@
 .tc-item-name { font-weight: 700; padding-top: 2px; }
 .tc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .tc-chips:empty { display: none; }
-.opt-chip { padding: 2px 8px; border-radius: 8px; background: var(--night-mid); color: var(--night-soft); font-size: 0.72rem; font-weight: 600; }
+.opt-chip { padding: 2px 8px; border-radius: 8px; background: var(--night-mid); color: var(--night-soft); font-size: 0.75rem; font-weight: 600; }
 .tc-item.is-done { opacity: 0.55; }
 .tc-item.is-done .tc-check { background: var(--ok); box-shadow: none; color: var(--night); }
 .tc-item.is-done .tc-item-name { text-decoration: line-through; text-decoration-color: var(--ok); }

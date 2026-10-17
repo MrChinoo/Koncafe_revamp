@@ -4,7 +4,7 @@ import { t, productName } from "../i18n.js";
 import { productById, DEMO_MEMBER } from "../data.js";
 import { navigate } from "../router.js";
 import { cartTotals, lineTotal, setQty, describeSelection } from "../orders.js";
-import { countTo, stagger } from "../motion.js";
+import { countTo, stagger, reflowList, vtIdent } from "../motion.js";
 import { announce, toast, openDialog } from "../ui.js";
 import { store, completeGuide } from "../store.js";
 
@@ -77,7 +77,7 @@ function lineCard(line, index) {
   const product = productById(line.productId);
   if (!product) return null;
   const qtyEl = h("output", { class: "qty-value mono" }, String(line.qty));
-  return h("article", { class: "line reveal", role: "listitem" },
+  return h("article", { class: "line reveal", role: "listitem", dataset: { vt: vtIdent("ln", line.key) } },
     h("div", { class: "line-media" }, productImage(product, { sizes: "120px" })),
     h("div", { class: "line-info" },
       h("h3", { class: "line-title" }, productName(product), h("span", { class: "kr line-kr" }, product.kr)),
@@ -209,12 +209,18 @@ export default {
     drawLines();
     drawClub();
     drawSummary();
+    // Tras la entrada inicial, los redibujos (cantidades) no repiten la animación.
+    setTimeout(() => lines.classList.add("is-settled"), 900);
 
     return {
       el,
       focus: el.querySelector("h1"),
       update(state, prev) {
-        if (state.cart !== prev.cart) drawLines();
+        if (state.cart !== prev.cart) {
+          // Si cambia el número de líneas (quitar/agregar), la lista se reacomoda animada.
+          if (state.cart.length !== prev.cart.length && state.cart.length && prev.cart.length) reflowList(lines, ".line", drawLines);
+          else drawLines();
+        }
         if (state.cart !== prev.cart || state.member !== prev.member || state.redeem !== prev.redeem) {
           drawClub();
           drawSummary();

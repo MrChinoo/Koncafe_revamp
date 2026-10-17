@@ -97,13 +97,47 @@ export default {
     );
     el.querySelector("h1").id = "attract-title";
 
-    const timer = setInterval(() => {
-      frames[index].classList.remove("is-active");
-      index = (index + 1) % frames.length;
-      frames[index].classList.add("is-active");
-      syncToday();
-    }, 4800);
+    // Sólo la primera foto entra en la carga inicial; el resto se adjunta cuando
+    // la página ya está pintada (ahorra ~130 KB del primer render).
+    const arch = el.querySelector(".arch");
+    const glow = arch.querySelector(".arch-glow");
+    for (const frame of frames.slice(1)) frame.remove();
+    let timer = null;
+    const lazy = setTimeout(() => {
+      for (const frame of frames.slice(1)) {
+        frame.loading = "eager";
+        arch.insertBefore(frame, glow);
+      }
+      timer = setInterval(() => {
+        frames[index].classList.remove("is-active");
+        index = (index + 1) % frames.length;
+        frames[index].classList.add("is-active");
+        syncToday();
+      }, 4800);
+    }, 1600);
 
-    return { el, focus: cta, destroy: () => clearInterval(timer) };
+    // Paralaje sutil con el puntero (sólo ratón/trackpad y sin movimiento reducido).
+    const finePointer = matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    const onMove = (event) => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const rect = el.getBoundingClientRect();
+        el.style.setProperty("--px", ((event.clientX - rect.left) / rect.width - 0.5).toFixed(3));
+        el.style.setProperty("--py", ((event.clientY - rect.top) / rect.height - 0.5).toFixed(3));
+      });
+    };
+    if (finePointer) el.addEventListener("pointermove", onMove);
+
+    return {
+      el,
+      focus: cta,
+      destroy: () => {
+        clearTimeout(lazy);
+        clearInterval(timer);
+        cancelAnimationFrame(frame);
+      },
+    };
   },
 };

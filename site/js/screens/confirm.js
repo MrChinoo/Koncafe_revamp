@@ -7,6 +7,7 @@ import { describeSelection, lineTotal } from "../orders.js";
 import { countTo, leafFall } from "../motion.js";
 import { fakeQr } from "../qr.js";
 import { store } from "../store.js";
+import { toast, announce } from "../ui.js";
 
 const STAGES = ["received", "preparing", "ready"];
 const AUTO_RETURN_S = 60;
@@ -142,7 +143,14 @@ export default {
         if (state.orders === prev.orders) return;
         const current = state.orders.find((o) => o.id === order.id);
         const before = prev.orders.find((o) => o.id === order.id);
-        if (current && before && current.status !== before.status) drawStatus(current);
+        if (current && before && current.status !== before.status) {
+          drawStatus(current);
+          if (current.status === "ready") {
+            leafFall(el, 16);
+            toast(t("done.readyToast", { n: order.number }), { iconName: "bell", tone: "matcha" });
+            announce(t("done.readyToast", { n: order.number }));
+          }
+        }
       },
       destroy() {
         clearInterval(timer);

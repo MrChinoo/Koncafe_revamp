@@ -1,6 +1,8 @@
 # Koyo 고요 · Kiosco demo comercial
 
-Este repositorio publica **sólo** `site/` en `https://koncafe-revamp.web.app/`
+Este repositorio publica **sólo** `site/` en `https://cafeteria.joabgaribay.com/`
+(dominio personalizado del sitio Firebase `koncafe-revamp`; DNS en Hostinger: CNAME
+`cafeteria` → `koncafe-revamp.web.app.`)
 (enlazada desde `joabgaribay.com/sitios` para mostrar el producto a cafeterías).
 El proyecto de Hosting es `koncafe-106af`, pero esta demo **no usa Firebase Auth,
 Firestore, Functions ni pagos**. Nunca desplegar reglas o funciones desde aquí.
@@ -30,6 +32,9 @@ Módulos ES nativos, sin bundler ni dependencias de ejecución (ver `README.md`)
   atributos `style="…"`, ni `data:` URIs, ni orígenes externos. Los estilos
   dinámicos van por `el.style.setProperty`. Fuentes e imágenes autoalojadas.
 - Usar `h()`, `icon()` y `productImage()` de `dom.js` para construir DOM.
+- Transiciones: entre pantallas `transition()`; dentro de una pantalla (filtros, listas)
+  `reflowList()` de `motion.js`, que nombra elementos sólo durante el cambio.
+- Texto mínimo 12 px (`--fs-micro: 0.75rem`) por legibilidad (Lighthouse `font-size`).
 - Animar sólo `transform`/`opacity`; respetar `prefers-reduced-motion`. Evitar
   `filter: blur` y `mix-blend-mode` en capas grandes animadas (rendimiento de kiosco).
 - La paleta de gráficas del gerente está validada con la skill `dataviz`; si se

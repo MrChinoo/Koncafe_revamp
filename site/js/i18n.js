@@ -31,7 +31,7 @@ const DICT = {
     "steps.pay": "Pago",
     "steps.done": "Listo",
     "bag": "Tu pedido",
-    "bag.aria": "Ver tu pedido, {n} productos",
+    "bag.aria": "Tu pedido, {n} productos",
 
     "menu.eyebrow": "Menú del día",
     "menu.title": "Encuentra tu\n*momento.*",
@@ -155,6 +155,7 @@ const DICT = {
     "done.newOrder": "Nuevo pedido",
     "done.autoReturn": "Volvemos al inicio en {n} s",
     "done.payAtCashier": "Paga {total} en caja",
+    "done.readyToast": "¡{n} está listo! Pasa a la barra",
 
     "ticket.order": "Orden",
     "ticket.service": "Servicio",
@@ -220,7 +221,7 @@ const DICT = {
     "steps.pay": "Payment",
     "steps.done": "Ready",
     "bag": "Your order",
-    "bag.aria": "View your order, {n} items",
+    "bag.aria": "Your order, {n} items",
 
     "menu.eyebrow": "Today's menu",
     "menu.title": "Find your\n*moment.*",
@@ -344,6 +345,7 @@ const DICT = {
     "done.newOrder": "New order",
     "done.autoReturn": "Back to start in {n} s",
     "done.payAtCashier": "Pay {total} at the counter",
+    "done.readyToast": "{n} is ready! Head to the bar",
 
     "ticket.order": "Order",
     "ticket.service": "Service",

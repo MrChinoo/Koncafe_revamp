@@ -128,3 +128,37 @@ export const shared = {
 export function stagger(elements, start = 0) {
   elements.forEach((el, index) => el.style.setProperty("--i", String(start + index)));
 }
+
+/** Convierte una clave cualquiera en un identificador CSS válido y estable. */
+export function vtIdent(prefix, key) {
+  let hash = 5381;
+  for (let i = 0; i < key.length; i++) hash = ((hash << 5) + hash + key.charCodeAt(i)) >>> 0;
+  return `${prefix}-${hash.toString(36)}`;
+}
+
+/**
+ * Reacomoda una lista con View Transitions: cada elemento que coincide con
+ * `selector` dentro de `root` recibe un nombre (vía data-vt) sólo mientras dura
+ * el cambio. Los que entran aparecen y los que salen se desvanecen.
+ */
+export function reflowList(root, selector, update) {
+  if (!document.startViewTransition || prefersReducedMotion() || document.documentElement.dataset.nav) return update();
+  const name = (on) => {
+    for (const el of root.querySelectorAll(selector)) {
+      if (!el.dataset.vt) continue;
+      if (on) {
+        el.style.setProperty("view-transition-name", el.dataset.vt);
+        el.style.setProperty("view-transition-class", "item");
+        el.classList.remove("reveal");
+      } else {
+        el.style.removeProperty("view-transition-name");
+        el.style.removeProperty("view-transition-class");
+      }
+    }
+  };
+  name(true);
+  return transition(() => {
+    update();
+    name(true);
+  }, "none").then(() => name(false));
+}

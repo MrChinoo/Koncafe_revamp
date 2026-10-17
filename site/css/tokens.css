@@ -65,7 +65,7 @@
   --night-high: #36342b;
   --night-ink: #f2edde;
   --night-soft: #b9b2a0;
-  --night-faint: #7c7667;
+  --night-faint: #9c9583;
 
   /* Estados SLA */
   --ok: #8fa883;
@@ -84,7 +84,7 @@
   --fs-h3: 1.25rem;
   --fs-body: 1rem;
   --fs-sm: 0.875rem;
-  --fs-micro: 0.6875rem;
+  --fs-micro: 0.75rem;
 
   /* Forma */
   --r-chip: 12px;
