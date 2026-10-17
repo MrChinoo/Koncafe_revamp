@@ -1,0 +1,115 @@
+/* Koyo · Komorebi — Panel del gerente */
+
+.manager { max-width: var(--max); margin: 0 auto; padding: 36px var(--gutter) 72px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-content: start; }
+.dash-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.dash-head .h1 { margin-top: 12px; }
+.dash-live {
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 6px 8px 6px 16px; border-radius: var(--r-pill);
+  background: var(--paper-high); font-weight: 800; font-size: 0.85rem;
+}
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--matcha-soft); animation: pulse 2s ease-in-out infinite; }
+.dash-logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--paper); }
+.dash-logo .logo-mark { width: 18px; }
+
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.kpi {
+  display: grid; gap: 6px; align-content: start;
+  padding: 20px 22px; border-radius: 26px; background: var(--sun); box-shadow: var(--shadow);
+}
+.kpi:first-child { background: var(--ink); color: var(--paper); grid-column: span 1; }
+.kpi:first-child .micro { color: rgba(254, 249, 234, 0.6); }
+.kpi-value { font-family: var(--font-display); font-size: clamp(1.7rem, 1.3rem + 1vw, 2.4rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.kpi-delta { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #b9d3a9; }
+.kpi-delta .delta-icon { width: 15px; height: 15px; rotate: -45deg; }
+.kpi-delta.is-down { color: #f0a58d; }
+.kpi-delta.is-down .delta-icon { rotate: -135deg; }
+.dash-session { text-transform: none; letter-spacing: 0.01em; font-weight: 500; color: var(--ink-faint); font-size: 0.8rem; margin-top: -8px; }
+
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; }
+.panel { display: grid; gap: 18px; align-content: start; padding: 24px; border-radius: 30px; background: var(--sun); box-shadow: var(--shadow); animation: rise var(--t-scene) var(--ease) 200ms both; }
+.panel--hours { grid-row: span 2; grid-template-rows: auto 1fr; }
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.panel-head .micro { margin-top: 4px; text-transform: none; letter-spacing: 0.01em; font-weight: 500; color: var(--ink-faint); font-size: 0.8rem; }
+
+/* Ventas por hora — una serie; marcas delgadas, extremo redondeado de 4 px, 2 px de separación */
+.bars {
+  display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 2px; align-items: end;
+  height: 100%; min-height: 320px; padding-top: 28px;
+  background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--paper-high) calc(25% - 1px) 25%) 0 0 / 100% calc(100% - 26px) no-repeat;
+}
+.bar { position: relative; display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; outline-offset: 2px; }
+.bar-fill {
+  align-self: end; justify-self: center;
+  width: min(70%, 28px); height: calc(var(--h) * 100%); min-height: 2px;
+  border-radius: 4px 4px 0 0; background: #a64b2a;
+  transform-origin: bottom;
+  transition: height var(--t-scene) var(--ease), background var(--t-comp) var(--ease);
+}
+.bars.is-first .bar-fill { animation: grow 900ms var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms + 200ms); }
+@keyframes grow { from { transform: scaleY(0); } }
+.bar.is-now .bar-fill { background: repeating-linear-gradient(135deg, #a64b2a 0 5px, #c26a49 5px 9px); }
+.bar.is-future .bar-fill { background: var(--paper-high); }
+.bar-label { text-align: center; font-size: 0.68rem; color: var(--ink-faint); }
+.bar.is-now .bar-label { color: var(--clay); font-weight: 700; }
+.bar:hover .bar-fill, .bar:focus-visible .bar-fill { background: var(--clay); }
+.bar-tip {
+  position: absolute; left: 50%; top: -6px; z-index: 3;
+  display: grid; gap: 2px; white-space: nowrap;
+  padding: 8px 12px; border-radius: 12px;
+  background: var(--ink); color: var(--paper); font-size: 0.74rem;
+  box-shadow: var(--shadow-lift);
+  opacity: 0; pointer-events: none;
+  transform: translate(-50%, -100%);
+  transition: opacity var(--t-micro) var(--ease), transform var(--t-micro) var(--ease);
+}
+.bar:hover .bar-tip, .bar:focus-visible .bar-tip { opacity: 1; transform: translate(-50%, calc(-100% - 4px)); }
+.bar-tip span { color: rgba(254, 249, 234, 0.7); }
+.bar:first-child .bar-tip { left: 0; transform: translate(0, -100%); }
+.bar:first-child:hover .bar-tip, .bar:first-child:focus-visible .bar-tip { transform: translate(0, calc(-100% - 4px)); }
+.bar:last-child .bar-tip { left: auto; right: 0; transform: translate(0, -100%); }
+
+.data-table { width: 100%; font-size: 0.88rem; }
+.data-table th { text-align: left; font-size: var(--fs-micro); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); padding: 8px 10px; background: var(--paper-low); }
+.data-table td { padding: 8px 10px; }
+.data-table tbody tr:nth-child(even) { background: var(--paper-low); }
+
+/* Productos estrella */
+.top-list { display: grid; gap: 10px; }
+.top-item { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 6px; align-items: center; }
+.top-rank { grid-row: span 2; color: var(--ink-faint); font-size: 0.8rem; }
+.top-thumb { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.top-name { grid-column: 3; grid-row: 1; font-weight: 700; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-value { grid-column: 4; grid-row: 1; font-size: 0.82rem; color: var(--ink-soft); text-align: right; }
+.top-track { grid-column: 3 / 5; grid-row: 2; height: 8px; border-radius: 4px; background: var(--paper-low); overflow: hidden; }
+.top-fill { display: block; height: 100%; width: calc(var(--w) * 100%); border-radius: 0 4px 4px 0; background: #a64b2a; transition: width var(--t-scene) var(--ease); transform-origin: left; }
+.top-list.is-first .top-fill { animation: grow-x 900ms var(--ease) 300ms both; }
+@keyframes grow-x { from { transform: scaleX(0); } }
+
+/* Mezcla de pagos — barra 100 % con 2 px de separación entre segmentos */
+.mix-bar { display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; }
+.mix-seg { flex: var(--w) 1 0; min-width: 4px; background: var(--c); transition: flex-grow var(--t-scene) var(--ease); }
+.mix-seg:first-child { border-radius: 4px 0 0 4px; }
+.mix-seg:last-child { border-radius: 0 4px 4px 0; }
+.mix-legend { display: grid; gap: 8px; }
+.mix-legend li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; font-size: 0.9rem; }
+.swatch { width: 12px; height: 12px; border-radius: 4px; background: var(--c); }
+.mix-name { font-weight: 700; }
+.mix-legend .muted { font-size: 0.8rem; min-width: 74px; text-align: right; }
+
+@media (max-width: 1180px) {
+  .kpi { padding: 18px; }
+  .kpi-value { font-size: clamp(1.5rem, 1rem + 1vw, 2rem); }
+}
+@media (max-width: 980px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:first-child { grid-column: span 2; }
+  .dash-grid { grid-template-columns: minmax(0, 1fr); }
+  .panel--hours { grid-row: auto; }
+}
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:first-child { grid-column: span 2; }
+  .bars { min-height: 240px; }
+  .bar-label { font-size: 0.6rem; }
+}

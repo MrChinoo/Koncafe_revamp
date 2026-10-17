@@ -1,41 +1,49 @@
-# KonCafe Kiosco · demostración comercial
+# Koyo 고요 · Kiosco demo comercial
 
-Este repositorio publica **sólo** `site/` en `https://koncafe-revamp.web.app/`.
+Este repositorio publica **sólo** `site/` en `https://koncafe-revamp.web.app/`
+(enlazada desde `joabgaribay.com/sitios` para mostrar el producto a cafeterías).
 El proyecto de Hosting es `koncafe-106af`, pero esta demo **no usa Firebase Auth,
 Firestore, Functions ni pagos**. Nunca desplegar reglas o funciones desde aquí.
 
+**Documento rector:** [`docs/BRIEFING.md`](docs/BRIEFING.md) — concepto *Komorebi*,
+paleta, tipografía, movimiento y especificación de cada pantalla. Cualquier cambio
+visual debe respetarlo (regla "sin líneas", CTA en degradado terracota, matcha
+sólo para éxito/selección/lealtad, acento editorial en cursiva).
+
 ## Arquitectura
 
-- `site/index.html`: estructura y metadatos.
-- `site/styles.css`: diseño adaptable y animaciones, con reducción de movimiento.
-- `site/app.js`: catálogo ficticio, carrito, personalización, ticket y cola de barra.
-- `site/chat-help.js`: guía local con respuestas predefinidas; punto de integración
-  para un chatbot futuro, sin conexiones ni claves en el cliente.
-- `site/assets/`: cuatro fotografías reutilizadas de `KonCafe_Estable` y seis
-  imágenes generadas para completar el catálogo.
-- `site/favicon.svg`, iconos PNG y `site/manifest.webmanifest`: identidad visual.
-- `scripts/build-icons.ps1`: reconstruye los iconos PNG desde la misma paleta.
-- `firebase.json`: publica únicamente `site/` y añade cabeceras de seguridad.
+Módulos ES nativos, sin bundler ni dependencias de ejecución (ver `README.md`).
 
-No requiere bundler ni dependencias de ejecución. Los datos viven en
-`sessionStorage` del navegador. Los pedidos no cruzan dispositivos y no llegan a
-la cafetería. El pago es una simulación explícita y no solicita datos financieros.
+- `site/js/main.js` monta pantallas por ruta hash con View Transitions.
+- Cada pantalla en `site/js/screens/*.js` exporta `{ mode, theme?, chrome, render(params) }`;
+  `render` devuelve `{ el, focus?, update?(state, prev), destroy?() }`.
+- Estado global en `site/js/store.js` (`store.get/set/subscribe`), persistido en
+  `sessionStorage`. Lógica de pedidos en `orders.js`; simulación en `sim.js`.
+- Textos en `i18n.js` (ES/EN). Barra y gerente tienen su propio diccionario local.
+- Rutas: `#/`, `#/menu`, `#/producto/:id[?linea=n]`, `#/pedido`, `#/pago`, `#/listo`,
+  `#/barra`, `#/gerente`.
+
+## Reglas importantes
+
+- **CSP estricta** (`firebase.json`): nada de `<script>`/`<style>` en línea, ni
+  atributos `style="…"`, ni `data:` URIs, ni orígenes externos. Los estilos
+  dinámicos van por `el.style.setProperty`. Fuentes e imágenes autoalojadas.
+- Usar `h()`, `icon()` y `productImage()` de `dom.js` para construir DOM.
+- Animar sólo `transform`/`opacity`; respetar `prefers-reduced-motion`. Evitar
+  `filter: blur` y `mix-blend-mode` en capas grandes animadas (rendimiento de kiosco).
+- La paleta de gráficas del gerente está validada con la skill `dataviz`; si se
+  cambia, volver a validar.
 
 ## Desarrollo y verificación
 
-En la raíz, usar el emulador local de Hosting:
-
 ```bash
 firebase emulators:start --only hosting --project koncafe-106af
+for f in site/js/*.js site/js/screens/*.js; do node --check "$f"; done
 ```
 
-Comprobar sintaxis: `node --check site/app.js` y
-`node --check site/chat-help.js`.
-
-Recorrido manual: inicio → menú/filtro/búsqueda → personalizar → carrito →
-opciones de servicio y pago de prueba → ticket → barra → avanzar hasta entregado.
-Probar también vista móvil, teclado y reinicio de demo.
-Verificar las diez fotografías, la guía local y la ausencia de errores de CSP.
+Recorrido manual en escritorio y 390 px: inicio → menú → producto → pedido (Club,
+canje) → pago (tarjeta/efectivo/QR) → confirmación → barra → gerente → inglés.
+Sin errores de consola ni de CSP.
 
 ## Despliegue
 
@@ -44,5 +52,5 @@ firebase deploy --only hosting:koncafe-revamp --project koncafe-106af
 ```
 
 No usar `firebase deploy` sin `--only hosting:koncafe-revamp` porque el proyecto
-Firebase es compartido con producción. Mantener los archivos de desarrollo y
-logs fuera de `site/`.
+Firebase es compartido con producción. Mantener archivos de desarrollo y logs
+fuera de `site/`.

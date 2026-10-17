@@ -1,26 +1,76 @@
-# KonCafe · kiosco de pedidos (demo)
+# Koyo 고요 · Kiosco de autoservicio (demo comercial)
 
-Demostración pública de un kiosco de cafetería. Permite explorar un menú de
-ejemplo, personalizar bebidas, agregar productos, simular un pedido y seguirlo
-en una vista de barra. **No cobra, factura ni envía órdenes reales.**
+Demostración interactiva del kiosco que opera en producción (`KonCafe_Estable`),
+presentada con la marca ficticia **Koyo 고요** («quietud»). Publicada en
+`https://koncafe-revamp.web.app` y enlazada desde `joabgaribay.com/sitios`.
+Muestra el negocio completo en tres vistas:
 
-## Decisión de datos
+| Vista | Ruta | Qué demuestra |
+|---|---|---|
+| **Kiosco** | `#/` → `#/menu` → `#/producto/:id` → `#/pedido` → `#/pago` → `#/listo` | Pedido, personalización, Club de lealtad, cobro y ticket |
+| **Barra** | `#/barra` | Cola en vivo por carriles, temporizadores de servicio y checklist |
+| **Gerente** | `#/gerente` | Ventas del día, horas pico, productos estrella y métodos de pago |
 
-El catálogo vive en `site/app.js` y el estado del carrito y la cola usa
-`sessionStorage`. Es la opción más segura y simple para una demo pública:
-respuesta inmediata, cero credenciales, sin escrituras en la base productiva y
-sin costo de backend. La cola se comparte entre pantallas de la misma pestaña;
-no entre dispositivos. Cuando exista un caso real para sincronizar tablets,
-deberá montarse un backend de demostración aislado con autenticación, reglas y
-límites propios.
+**No cobra, no factura y no envía pedidos.** Todo se simula en el navegador
+(`sessionStorage`); un simulador inyecta clientes ficticios para que la barra se
+sienta viva.
 
-## Ejecutar
+La identidad, el concepto *Komorebi* y las especificaciones de cada pantalla
+están en [`docs/BRIEFING.md`](docs/BRIEFING.md).
+
+## Arquitectura
+
+Sin bundler ni dependencias en tiempo de ejecución: HTML + CSS + módulos ES nativos.
+
+```
+site/
+├── index.html            Marco, precarga de fuentes, sin código en línea (CSP)
+├── css/
+│   ├── tokens.css        Tokens de diseño + @font-face autoalojadas
+│   ├── base.css          Tipografía, componentes, transiciones, komorebi
+│   ├── kiosk.css         Pantallas del cliente
+│   ├── barista.css       Barra (modo oscuro)
+│   └── manager.css       Panel del gerente
+├── js/
+│   ├── main.js           Arranque, rutas, montaje con View Transitions
+│   ├── router.js         Router por hash (enlaces directos a cada vista)
+│   ├── store.js          Estado con suscripción + sessionStorage
+│   ├── data.js           Catálogo, opciones por perfil, cliente demo
+│   ├── orders.js         Carrito, totales, pedidos, SLA
+│   ├── sim.js            Simulador de operación
+│   ├── i18n.js           Textos ES/EN
+│   ├── chrome.js         Barra de demo, barra del kiosco, recorrido, inactividad
+│   ├── motion.js         Transiciones, contadores, vuelo a la bolsa, hojas
+│   ├── ui.js · dom.js · qr.js
+│   └── screens/          attract · menu · product · cart · payment · confirm · barista · manager
+├── fonts/                Plus Jakarta Sans, Manrope, JetBrains Mono (WOFF2 variables) + Noto Sans KR (subconjunto)
+└── img/                  Producto en WebP 480/960, rosetta, grano
+```
+
+## Ejecutar en local
 
 ```bash
 firebase emulators:start --only hosting --project koncafe-106af
 ```
 
-Abrir `http://127.0.0.1:5000`. La página no necesita `npm install`.
+Abrir `http://127.0.0.1:5000`. No requiere `npm install`.
+
+## Verificar
+
+```bash
+for f in site/js/*.js site/js/screens/*.js; do node --check "$f"; done
+```
+
+Recorrido manual: inicio → menú (filtro, búsqueda, agregado rápido) → producto
+(personalizar) → pedido (Club por QR o teléfono, canje) → pago (tarjeta, efectivo
+o QR) → confirmación (estado en vivo) → barra (avanzar) → gerente. Probar también
+inglés, móvil (390 px), teclado y `prefers-reduced-motion`. Sin errores de consola
+ni de CSP.
+
+## Recursos
+
+Las fotos y los iconos se regeneran con `scripts/build-assets.mjs` (requiere
+`sharp` sólo en desarrollo; ver el encabezado del script).
 
 ## Publicar
 
@@ -28,19 +78,5 @@ Abrir `http://127.0.0.1:5000`. La página no necesita `npm install`.
 firebase deploy --only hosting:koncafe-revamp --project koncafe-106af
 ```
 
-El Hosting comparte el proyecto Firebase con la aplicación real, pero esta
-configuración publica exclusivamente `site/` y no despliega reglas, Functions ni
-otros sitios. Cuatro fotografías se reutilizaron de `KonCafe_Estable` y las otras
-seis se generaron para esta demo y se optimizaron en JPEG. Los iconos de acceso
-directo se pueden reconstruir con `powershell -File scripts/build-icons.ps1`.
-
-## Guía y futuro chatbot
-
-`site/chat-help.js` ofrece una guía local con respuestas predefinidas. La
-interfaz deja un espacio claro para integrar más adelante un chatbot real:
-reemplazar la función `answer()` por una llamada a un backend propio con
-autenticación, límites de uso y protección de secretos. La política CSP actual
-bloquea conexiones externas deliberadamente; al integrar el backend se debe
-autorizar solo su origen concreto en `firebase.json`. No se deben incluir claves
-del proveedor de IA en el navegador. La guía actual no envía ni almacena
-conversaciones.
+El proyecto Firebase es compartido con producción: **nunca** usar `firebase deploy`
+sin `--only hosting:koncafe-revamp`, ni desplegar reglas o funciones desde aquí.

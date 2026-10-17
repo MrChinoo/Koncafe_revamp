@@ -1,43 +1,58 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f7f4ee" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fef9ea" />
+    <meta name="color-scheme" content="light" />
     <meta
       name="description"
-      content="Explora el kiosco de pedidos KonCafe: personaliza bebidas, arma tu pedido y conoce una experiencia de cafetería digital. Demostración interactiva sin cobros reales."
+      content="Demo interactiva del kiosco Koyo: pide y personaliza tu café, únete al Club, paga en una terminal de prueba y mira tu pedido avanzar en la barra y en el panel del gerente."
     />
+    <meta property="og:title" content="Koyo · Kiosco de autoservicio (demo)" />
+    <meta property="og:description" content="Pedido, lealtad, pago, barra y gerente en una sola demostración interactiva." />
+    <meta property="og:type" content="website" />
+    <title>Koyo · Kiosco de autoservicio</title>
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20261016-3" />
-    <title>KonCafe — Kiosco de pedidos · Demo</title>
-    <script type="module" src="/app.js?v=20261016-3"></script>
-    <script type="module" src="/chat-help.js?v=20261016-3"></script>
+
+    <link rel="preload" href="/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/manrope.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/img/products/matcha-960.webp" as="image" type="image/webp" fetchpriority="high" />
+
+    <link rel="stylesheet" href="/css/tokens.css?v=k2" />
+    <link rel="stylesheet" href="/css/base.css?v=k2" />
+    <link rel="stylesheet" href="/css/kiosk.css?v=k2" />
+    <link rel="stylesheet" href="/css/barista.css?v=k2" />
+    <link rel="stylesheet" href="/css/manager.css?v=k2" />
+    <link rel="modulepreload" href="/js/main.js?v=k2" />
+    <script type="module" src="/js/main.js?v=k2"></script>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="site-header" id="site-header"></header>
-      <main id="app" tabindex="-1"></main>
-      <footer class="site-footer">
-        <span
-          >KonCafe <span class="footer-sparkle">✳</span> Kiosco
-          interactivo</span
-        >
-        <span>Demostración comercial · Sin cobros ni pedidos reales</span>
-      </footer>
+    <a class="skip-link" href="#view">Saltar al contenido</a>
+    <header id="demo-bar" class="demo-bar"></header>
+    <div id="app" class="app" data-mode="kiosk">
+      <header id="topbar" class="topbar" hidden></header>
+      <main id="view" class="view" tabindex="-1"></main>
     </div>
-    <div id="modal-root"></div>
-    <div id="assistant-root"></div>
-    <div id="boot-screen" class="boot-screen" role="status" aria-label="Preparando el kiosco">
-      <div class="boot-loader" aria-hidden="true">
-        <span class="boot-loader-ring"></span>
-        <img src="/favicon.svg" alt="" width="64" height="64" />
-      </div>
-      <p>Preparando tu experiencia</p>
-    </div>
+    <div id="overlay-root"></div>
+    <div id="toast-root" class="toast-root"></div>
     <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+    <noscript><p class="noscript">Esta demo necesita JavaScript para funcionar.</p></noscript>
+
+    <div id="boot" class="boot" role="status" aria-label="Preparando el kiosco">
+      <svg class="boot-mark" viewBox="100 118 312 296" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="54" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M150 146 H350 Q362 146 362 158 V262" />
+          <path d="M256 318 V368" />
+          <path d="M128 386 H384" />
+        </g>
+        <circle cx="226" cy="238" r="40" fill="#D97757" />
+      </svg>
+      <span class="boot-line" aria-hidden="true"></span>
+    </div>
   </body>
 </html>
