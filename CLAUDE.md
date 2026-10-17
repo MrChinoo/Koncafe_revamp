@@ -25,6 +25,7 @@ Módulos ES nativos, sin bundler ni dependencias de ejecución (ver `README.md`)
 
 ## Reglas importantes
 
+- **Embebible sólo desde joabgaribay.com** (`frame-ancestors` en la CSP); no reintroducir `X-Frame-Options: DENY`.
 - **CSP estricta** (`firebase.json`): nada de `<script>`/`<style>` en línea, ni
   atributos `style="…"`, ni `data:` URIs, ni orígenes externos. Los estilos
   dinámicos van por `el.style.setProperty`. Fuentes e imágenes autoalojadas.
