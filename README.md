@@ -30,4 +30,17 @@ firebase deploy --only hosting:koncafe-revamp --project koncafe-106af
 
 El Hosting comparte el proyecto Firebase con la aplicación real, pero esta
 configuración publica exclusivamente `site/` y no despliega reglas, Functions ni
-otros sitios. Las fotografías vienen del proyecto propio `KonCafe_Estable`.
+otros sitios. Cuatro fotografías se reutilizaron de `KonCafe_Estable` y las otras
+seis se generaron para esta demo y se optimizaron en JPEG. Los iconos de acceso
+directo se pueden reconstruir con `powershell -File scripts/build-icons.ps1`.
+
+## Guía y futuro chatbot
+
+`site/chat-help.js` ofrece una guía local con respuestas predefinidas. La
+interfaz deja un espacio claro para integrar más adelante un chatbot real:
+reemplazar la función `answer()` por una llamada a un backend propio con
+autenticación, límites de uso y protección de secretos. La política CSP actual
+bloquea conexiones externas deliberadamente; al integrar el backend se debe
+autorizar solo su origen concreto en `firebase.json`. No se deben incluir claves
+del proveedor de IA en el navegador. La guía actual no envía ni almacena
+conversaciones.

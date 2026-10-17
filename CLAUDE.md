@@ -9,7 +9,12 @@ Firestore, Functions ni pagos**. Nunca desplegar reglas o funciones desde aquí.
 - `site/index.html`: estructura y metadatos.
 - `site/styles.css`: diseño adaptable y animaciones, con reducción de movimiento.
 - `site/app.js`: catálogo ficticio, carrito, personalización, ticket y cola de barra.
-- `site/assets/`: fotografías reutilizadas de `KonCafe_Estable/public/products/`.
+- `site/chat-help.js`: guía local con respuestas predefinidas; punto de integración
+  para un chatbot futuro, sin conexiones ni claves en el cliente.
+- `site/assets/`: cuatro fotografías reutilizadas de `KonCafe_Estable` y seis
+  imágenes generadas para completar el catálogo.
+- `site/favicon.svg`, iconos PNG y `site/manifest.webmanifest`: identidad visual.
+- `scripts/build-icons.ps1`: reconstruye los iconos PNG desde la misma paleta.
 - `firebase.json`: publica únicamente `site/` y añade cabeceras de seguridad.
 
 No requiere bundler ni dependencias de ejecución. Los datos viven en
@@ -24,11 +29,13 @@ En la raíz, usar el emulador local de Hosting:
 firebase emulators:start --only hosting --project koncafe-106af
 ```
 
-Comprobar sintaxis: `node --check site/app.js`.
+Comprobar sintaxis: `node --check site/app.js` y
+`node --check site/chat-help.js`.
 
 Recorrido manual: inicio → menú/filtro/búsqueda → personalizar → carrito →
 opciones de servicio y pago de prueba → ticket → barra → avanzar hasta entregado.
 Probar también vista móvil, teclado y reinicio de demo.
+Verificar las diez fotografías, la guía local y la ausencia de errores de CSP.
 
 ## Despliegue
 

@@ -50,7 +50,7 @@ const MENU = Object.freeze([
     category: "Café",
     price: 49,
     description: "Extracción aromática, equilibrada y sin complicaciones.",
-    art: "☕",
+    image: "americano.jpg",
     kind: "drink",
     temperatures: ["Caliente", "Frío"],
   },
@@ -60,7 +60,7 @@ const MENU = Object.freeze([
     category: "Té",
     price: 72,
     description: "Canela, cardamomo y notas cálidas en cada sorbo.",
-    art: "✳",
+    image: "chai.jpg",
     kind: "drink",
     temperatures: ["Caliente", "Frío"],
   },
@@ -70,7 +70,7 @@ const MENU = Object.freeze([
     category: "Café",
     price: 69,
     description: "Extracción lenta, perfil suave y final refrescante.",
-    art: "◌",
+    image: "coldbrew.jpg",
     kind: "drink",
     temperatures: ["Frío"],
   },
@@ -80,7 +80,7 @@ const MENU = Object.freeze([
     category: "Panadería",
     price: 58,
     description: "Hojaldre dorado con centro ligero y mantequilloso.",
-    art: "🥐",
+    image: "croissant.jpg",
     kind: "food",
   },
   {
@@ -89,7 +89,7 @@ const MENU = Object.freeze([
     category: "Panadería",
     price: 108,
     description: "Pan artesanal, queso, vegetales frescos y aderezo.",
-    art: "🥪",
+    image: "sandwich.jpg",
     kind: "food",
   },
   {
@@ -98,7 +98,7 @@ const MENU = Object.freeze([
     category: "Panadería",
     price: 65,
     description: "Cacao intenso y textura húmeda para acompañar tu café.",
-    art: "▦",
+    image: "brownie.jpg",
     kind: "food",
   },
 ]);
@@ -288,6 +288,8 @@ const state = {
   lastOrderId: null,
   draft: null,
 };
+let pendingPageTransition = true;
+let checkoutPending = false;
 function save() {
   try {
     sessionStorage.setItem(
@@ -302,6 +304,7 @@ function announce(message) {
   announcer.textContent = message;
 }
 function go(page) {
+  pendingPageTransition = true;
   state.page = page;
   state.draft = null;
   modalRoot.replaceChildren();
@@ -364,7 +367,14 @@ function brand() {
       onClick: () => go("welcome"),
       "aria-label": "KonCafe, ir al inicio",
     },
-    node("span", { class: "brand-mark", "aria-hidden": "true" }, "K"),
+    node("img", {
+      class: "brand-mark",
+      src: "/favicon.svg",
+      alt: "",
+      "aria-hidden": "true",
+      width: "43",
+      height: "43",
+    }),
     node(
       "span",
       { class: "brand-word" },
@@ -562,24 +572,34 @@ function step(number, title, description) {
 }
 
 function visual(product, className = "") {
-  return product.image
-    ? node(
-        "div",
-        { class: `product-visual ${className}` },
-        node("img", {
-          src: `/assets/${product.image}`,
-          alt: product.name,
-          loading: "lazy",
-        }),
-      )
-    : node(
-        "div",
-        {
-          class: `product-visual art art-${product.id} ${className}`,
-          "aria-hidden": "true",
-        },
-        node("span", {}, product.art),
-      );
+  if (product.image) {
+    const wrapper = node("div", {
+      class: `product-visual is-loading ${className}`,
+    });
+    const image = node("img", {
+      src: `/assets/${product.image}`,
+      alt: product.name,
+      loading: "lazy",
+      decoding: "async",
+    });
+    image.addEventListener("load", () => wrapper.classList.add("is-loaded"), {
+      once: true,
+    });
+    image.addEventListener("error", () => wrapper.classList.add("is-loaded"), {
+      once: true,
+    });
+    wrapper.append(image);
+    if (image.complete) wrapper.classList.add("is-loaded");
+    return wrapper;
+  }
+  return node(
+    "div",
+    {
+      class: `product-visual art art-${product.id} ${className}`,
+      "aria-hidden": "true",
+    },
+    node("span", {}, product.art),
+  );
 }
 function productCard(product) {
   return node(
@@ -1178,7 +1198,27 @@ function renderCheckout() {
   app.replaceChildren(section);
 }
 function placeOrder() {
-  if (!state.cart.length) return;
+  if (!state.cart.length || checkoutPending) return;
+  checkoutPending = true;
+  const processing = node(
+    "div",
+    { class: "processing-screen", role: "status", "aria-live": "polite" },
+    node(
+      "div",
+      { class: "boot-loader", "aria-hidden": "true" },
+      node("span", { class: "boot-loader-ring" }),
+      node("img", { src: "/favicon.svg", alt: "", width: "64", height: "64" }),
+    ),
+    node("p", {}, "Preparando tu pedido de prueba"),
+  );
+  document.body.append(processing);
+  window.setTimeout(() => {
+    processing.remove();
+    checkoutPending = false;
+    finishOrder();
+  }, 550);
+}
+function finishOrder() {
   let number;
   const existingNumbers = new Set(state.orders.map((order) => order.number));
   do {
@@ -1430,6 +1470,11 @@ function render() {
   else if (state.page === "confirmed") renderConfirmed();
   else if (state.page === "barista") renderBarista();
   else renderWelcome();
+  document.body.classList.toggle("has-cart", quantity() > 0);
+  if (pendingPageTransition) {
+    app.firstElementChild?.classList.add("page-enter");
+    pendingPageTransition = false;
+  }
 }
 document.addEventListener("keydown", (event) => {
   if (!state.draft) return;
@@ -1452,3 +1497,8 @@ document.addEventListener("keydown", (event) => {
 });
 save();
 render();
+requestAnimationFrame(() => {
+  const boot = document.querySelector("#boot-screen");
+  boot?.classList.add("is-ready");
+  window.setTimeout(() => boot?.remove(), 400);
+});
