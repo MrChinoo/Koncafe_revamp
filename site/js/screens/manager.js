@@ -1,5 +1,5 @@
 // Gerente — el día del negocio de un vistazo. Datos base ficticios + pedidos de la sesión.
-import { h, icon, money, logoMark } from "../dom.js";
+import { h, icon, money, logoMark, productThumb } from "../dom.js";
 import { productName, lang } from "../i18n.js";
 import { PRODUCTS, productById } from "../data.js";
 import { store, completeGuide } from "../store.js";
@@ -188,7 +188,7 @@ export default {
         const product = productById(id);
         return h("li", { class: "top-item" },
           h("span", { class: "top-rank mono" }, String(index + 1).padStart(2, "0")),
-          h("img", { class: "top-thumb", src: `/img/products/${product.image}-480.webp`, alt: "", width: 40, height: 40, loading: "lazy", decoding: "async" }),
+          productThumb(product.image, 40, "top-thumb"),
           h("span", { class: "top-name" }, productName(product)),
           h("span", { class: "top-track" }, h("span", { class: "top-fill", style: { "--w": String(units / topMax) } })),
           h("span", { class: "top-value mono" }, `${units} ${c("units")}`),

@@ -15,7 +15,6 @@ export function komorebi() {
     h("span", { class: "k-shaft k-shaft--3" }),
     h("span", { class: "k-dapple k-dapple--1" }),
     h("span", { class: "k-dapple k-dapple--2" }),
-    h("span", { class: "k-grain" }),
   );
 }
 
@@ -25,7 +24,7 @@ function stamp() {
   svg.setAttribute("viewBox", "0 0 120 120");
   svg.setAttribute("class", "stamp");
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = '<defs><path id="stamp-circle" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/></defs><text><textPath href="#stamp-circle">slow coffee · smart service · 고요 ·</textPath></text>';
+  svg.innerHTML = '<defs><path id="stamp-circle" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/></defs><text><textPath href="#stamp-circle" textLength="272" lengthAdjust="spacingAndGlyphs">slow coffee · smart service · 고요 ·</textPath></text>';
   return svg;
 }
 

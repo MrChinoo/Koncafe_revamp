@@ -461,11 +461,6 @@ table { border-collapse: collapse; }
   50% { transform: translate(2vmax, 1vmax) rotate(4deg) scale(1.03); }
   100% { transform: translate(-1vmax, 2.5vmax) rotate(-3deg) scale(0.99); }
 }
-.k-grain {
-  position: absolute; inset: 0; opacity: 0.18;
-  background-image: url("/img/grain.svg");
-  background-size: 220px;
-}
 
 /* ── Hojas (confirmación) ───────────────────────────────────── */
 

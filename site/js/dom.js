@@ -47,13 +47,13 @@ export function accent(text) {
   );
 }
 
-/** Imagen de producto responsiva (WebP 480/960). */
+/** Imagen de producto responsiva (WebP 160–960 px; el navegador elige según sizes y DPR). */
 export function productImage(product, { sizes = "(max-width: 700px) 50vw, 25vw", eager = false, className = "" } = {}) {
   const base = `/img/products/${product.image}`;
   return h("img", {
     class: className,
     src: `${base}-480.webp`,
-    srcset: `${base}-480.webp 480w, ${base}-960.webp 960w`,
+    srcset: [160, 320, 480, 640, 960].map((w) => `${base}-${w}.webp ${w}w`).join(", "),
     sizes,
     alt: "",
     width: 480,
@@ -103,6 +103,22 @@ const ICONS = {
 };
 
 const iconTemplate = document.createElement("template");
+/** Miniatura circular (categorías, rankings): 160/320 px. */
+export function productThumb(image, size, className = "") {
+  const base = `/img/products/${image}`;
+  return h("img", {
+    class: className,
+    src: `${base}-160.webp`,
+    srcset: `${base}-160.webp 160w, ${base}-320.webp 320w`,
+    sizes: `${size}px`,
+    alt: "",
+    width: size,
+    height: size,
+    loading: "lazy",
+    decoding: "async",
+  });
+}
+
 export function icon(name, className = "icon") {
   iconTemplate.innerHTML = `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[name] ?? ""}</svg>`;
   return iconTemplate.content.firstElementChild;

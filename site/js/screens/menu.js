@@ -1,5 +1,5 @@
 // 02 · Menú — encontrar el momento.
-import { h, icon, accent, money, productImage } from "../dom.js";
+import { h, icon, accent, money, productImage, productThumb } from "../dom.js";
 import { t, productName, productDesc, lang } from "../i18n.js";
 import { CATEGORIES, PRODUCTS, defaultSelection } from "../data.js";
 import { navigate } from "../router.js";
@@ -121,7 +121,7 @@ export default {
             reflow(drawGrid);
           },
         },
-        h("span", { class: "cat-photo" }, h("img", { src: `/img/products/${category.image}-480.webp`, alt: "", width: 96, height: 96, loading: "lazy", decoding: "async" })),
+        h("span", { class: "cat-photo" }, productThumb(category.image, 75)),
         h("span", { class: "cat-text" },
           h("span", { class: "cat-name" }, category[lang()]),
           h("span", { class: "cat-sub" }, h("span", { class: "kr" }, category.kr), " · ", h("span", { class: "mono" }, String(count))),
