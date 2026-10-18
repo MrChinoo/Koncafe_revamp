@@ -1,0 +1,22 @@
+name: Calidad estática
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Sintaxis e imports de módulos
+        run: node scripts/check-static.mjs
+      - name: Regresiones de navegación
+        run: node --test scripts/router.test.mjs

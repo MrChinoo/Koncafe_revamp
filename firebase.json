@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "predeploy": ["node scripts/check-static.mjs", "node --test scripts/router.test.mjs"],
     "site": "koncafe-revamp",
     "public": "site",
     "ignore": ["**/.*", "**/node_modules/**"],
