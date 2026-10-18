@@ -12,8 +12,14 @@ export function defineRoutes(list) {
 }
 
 export function currentPath() {
-  const raw = decodeURIComponent(location.hash.slice(1) || "/");
-  return raw.split("?")[0] || "/";
+  // Un enlace pegado a medias puede contener un escape incompleto (% o %E0...).
+  // El hash viene de fuera: si no se puede decodificar, volver al inicio conserva la demo.
+  try {
+    const raw = decodeURIComponent(location.hash.slice(1) || "/");
+    return raw.split("?")[0] || "/";
+  } catch {
+    return "/";
+  }
 }
 
 export function currentQuery() {
