@@ -12,7 +12,8 @@ Demo comercial estática Koyo: HTML, CSS y módulos ES, sin bundler, sin package
 
 - `node --test scripts/router.test.mjs`: **3/3 pruebas correctas**; rutas normales, escapes incompletos y consulta de un enlace dañado.
 - Comprobación de sintaxis de los **20 módulos JavaScript** y de sus imports locales: **0 fallos**.
-- Registros en `../_revision_2026-10-18/gym_cafe/`. No se publicó esta corrección; falta QA en navegador de las vistas.
+- QA real con Playwright en el servidor local existente: abrir `#/%` recupera la portada; «Toca para comenzar» navega a `#/menu` y muestra «Encuentra tu momento». Consola: **0 errores y 0 advertencias**. La sesión de navegador se cerró al terminar.
+- Registros en `../_revision_2026-10-18/gym_cafe/`. La corrección se entregó en la rama remota `maintenance/autonomous-2026-10-18`; no se desplegó. La comprobación de navegador anterior cubre entrada y navegación inicial, no todo el recorrido comercial.
 
 ## Plan de continuidad
 
