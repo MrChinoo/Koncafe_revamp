@@ -10,7 +10,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' https://joabgaribay.com https://www.joabgaribay.com"
+            "value": "default-src 'self'; script-src 'self' https://joabgaribay.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com; style-src 'self'; img-src 'self' https://*.clarity.ms https://c.bing.com; font-src 'self'; connect-src https://*.clarity.ms https://c.bing.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' https://joabgaribay.com https://www.joabgaribay.com"
           },
           { "key": "X-Content-Type-Options", "value": "nosniff" },
           {

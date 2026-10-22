@@ -185,6 +185,7 @@ const DICT = {
     "guide.done": "¡Recorrido completo!",
     "guide.go": "Ir",
     "guide.close": "Cerrar recorrido",
+    "guide.privacy": "Esta demo usa Microsoft Clarity para ver cómo se recorre; lo que escribes se oculta.",
 
     "service.here": "Para aquí",
     "service.togo": "Para llevar",
@@ -376,6 +377,7 @@ const DICT = {
     "guide.done": "Tour complete!",
     "guide.go": "Go",
     "guide.close": "Close tour",
+    "guide.privacy": "This demo uses Microsoft Clarity to see how it is explored; what you type is hidden.",
 
     "service.here": "For here",
     "service.togo": "To go",

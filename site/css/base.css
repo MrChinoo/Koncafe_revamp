@@ -544,6 +544,7 @@ table { border-collapse: collapse; }
 .guide-meter { height: 6px; border-radius: var(--r-pill); background: var(--paper-high); overflow: hidden; }
 .guide-meter-fill { display: block; height: 100%; background: var(--cta); transform-origin: left; transform: scaleX(var(--p)); transition: transform var(--t-scene) var(--ease); }
 .guide-steps { display: grid; gap: 8px; }
+.guide-privacy { font-size: var(--fs-micro); }
 .guide-step {
   display: flex; align-items: center; gap: 14px;
   padding: 10px 10px 10px 12px; border-radius: 18px; background: var(--paper-low);

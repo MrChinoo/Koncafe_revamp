@@ -177,6 +177,7 @@ export function openGuide() {
         ),
       ),
     ),
+    h("p", { class: "muted guide-privacy" }, t("guide.privacy")),
   );
   dialog = openDialog(content, { label: t("guide.title"), className: "sheet--guide" });
 }

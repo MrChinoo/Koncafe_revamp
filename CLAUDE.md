@@ -29,7 +29,10 @@ Módulos ES nativos, sin bundler ni dependencias de ejecución (ver `README.md`)
 
 - **Embebible sólo desde joabgaribay.com** (`frame-ancestors` en la CSP); no reintroducir `X-Frame-Options: DENY`.
 - **CSP estricta** (`firebase.json`): nada de `<script>`/`<style>` en línea, ni
-  atributos `style="…"`, ni `data:` URIs, ni orígenes externos. Los estilos
+  atributos `style="…"`, ni `data:` URIs, ni orígenes externos. **Única excepción
+  (22-oct-2026): Microsoft Clarity** — `joabgaribay.com` (el cargador
+  `widgets/medicion-1.0.0.js`), `*.clarity.ms` y `c.bing.com` en script/img/connect.
+  Graba solo en `cafeteria.joabgaribay.com` (proyecto «Demos», etiqueta `sitio=cafeteria`). Los estilos
   dinámicos van por `el.style.setProperty`. Fuentes e imágenes autoalojadas.
 - Usar `h()`, `icon()` y `productImage()` de `dom.js` para construir DOM.
 - Transiciones: entre pantallas `transition()`; dentro de una pantalla (filtros, listas)
